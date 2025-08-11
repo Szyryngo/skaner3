@@ -1,6 +1,6 @@
 # SESSION_NOTES.md - AI Network Sniffer
 
-## Projekt: AI Network Sniffer v0.3.0
+## Projekt: AI Network Sniffer v0.3.1
 
 ### Cel
 Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagrożeń bezpieczeństwa.
@@ -74,10 +74,11 @@ Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagr
 
 ## Aktualny stan
 
-### Wersja: 0.3.0
+### Wersja: 0.3.1
 - **Nazwa**: AI Network Sniffer
-- **Status**: Stabilna wersja z pełną funkcjonalnością eksportu i konfiguracji
-- **Wszystkie główne funkcje zaimplementowane**
+- **Status**: Stabilna wersja z pełną funkcjonalnością i naprawionymi błędami
+- **Wszystkie główne funkcje**: Zaimplementowane
+- **Wszystkie błędy**: Naprawione i przetestowane
 
 ### Pliki zaimplementowane
 - ✅ `core/__init__.py` - nazwa i wersja aplikacji

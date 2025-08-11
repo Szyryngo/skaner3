@@ -1,6 +1,6 @@
 # BUGS_AND_FIXES.md - Dokumentacja błędów i rozwiązań
 
-## AI Network Sniffer v0.3.0
+## AI Network Sniffer v0.3.1
 
 ### Cel dokumentu
 Ten plik zawiera dokumentację wszystkich znalezionych błędów, ich przyczyn, rozwiązań i lekcji na przyszłość.
@@ -312,6 +312,6 @@ def analyze_packet(self, packet: PacketInfo) -> Dict[str, object]:
 ---
 
 **Ostatnia aktualizacja:** 2025-01-27  
-**Wersja dokumentu:** 1.0  
+**Wersja dokumentu:** 1.1  
 **Autor:** AI Assistant  
-**Status:** ✅ Wszystkie błędy naprawione
+**Status:** ✅ Wszystkie błędy naprawione, wersja 0.3.1

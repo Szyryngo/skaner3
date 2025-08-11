@@ -1,4 +1,4 @@
-# AI Network Sniffer v0.3.0
+# AI Network Sniffer v0.3.1
 
 Inteligentny sniffer sieciowy z AI do wykrywania anomalii i zagrożeń bezpieczeństwa.
 
@@ -101,6 +101,11 @@ pytest --cov=core tests/
 ```
 
 ## 📝 Historia zmian
+
+### v0.3.1
+- ✅ Zwiększona wersja po naprawie błędów
+- ✅ Kompletna dokumentacja błędów w BUGS_AND_FIXES.md
+- ✅ Wszystkie błędy naprawione i przetestowane
 
 ### v0.3.0
 - ✅ Osobne formaty eksportu dla pakietów i alertów
