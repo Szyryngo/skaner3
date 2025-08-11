@@ -124,6 +124,7 @@ class MainWindow(QMainWindow):
             "format": str(settings.value("export/format", "csv")),
             "rotate_rows": int(settings.value("export/rotate_rows", 100000)),
             "auto": bool(settings.value("export/auto", False)),
+            "dir": str(settings.value("export/dir", "")),
         }
 
         # Bufor indeksowany od najstarszego
@@ -316,6 +317,7 @@ class MainWindow(QMainWindow):
             settings.setValue("ai/combined_threshold", self.cfg_ai.get("combined_threshold", 0.7))
             settings.setValue("ai/alerts_only_anomalies", self.cfg_ai.get("alerts_only_anomalies", False))
             settings.setValue("export/auto", self.cfg_export.get("auto", False))
+            settings.setValue("export/dir", self.cfg_export.get("dir", ""))
             self._recreate_ai()
             self._set_status("Config updated")
 
@@ -537,9 +539,15 @@ class MainWindow(QMainWindow):
             return
         is_csv = (self.cfg_export.get("format", "csv") == "csv")
         rotate = int(self.cfg_export.get("rotate_rows", 100000))
+        base_dir = self.cfg_export.get("dir", "").strip() or "."
+        import os
         try:
-            self._packet_logger = LogWriter("packets_log.csv" if is_csv else "packets_log.txt", is_csv=is_csv, max_rows_per_file=rotate, headers=["time","src_ip","dst_ip","src_port","dst_port","protocol","length"])
-            self._alert_logger = LogWriter("alerts_log.csv" if is_csv else "alerts_log.txt", is_csv=is_csv, max_rows_per_file=rotate, headers=["type","score","time","src_ip","dst_ip","protocol","length"])
+            os.makedirs(base_dir, exist_ok=True)
+        except Exception:
+            base_dir = "."
+        try:
+            self._packet_logger = LogWriter(os.path.join(base_dir, "packets_log.csv" if is_csv else "packets_log.txt"), is_csv=is_csv, max_rows_per_file=rotate, headers=["time","src_ip","dst_ip","src_port","dst_port","protocol","length"])
+            self._alert_logger = LogWriter(os.path.join(base_dir, "alerts_log.csv" if is_csv else "alerts_log.txt"), is_csv=is_csv, max_rows_per_file=rotate, headers=["type","score","time","src_ip","dst_ip","protocol","length"])
         except Exception:
             self._packet_logger = None
             self._alert_logger = None

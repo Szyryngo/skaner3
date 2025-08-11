@@ -15,6 +15,9 @@ from PyQt5.QtWidgets import (
     QSpinBox,
     QDoubleSpinBox,
     QLineEdit,
+    QPushButton,
+    QFileDialog,
+    QHBoxLayout,
     QWidget,
 )
 
@@ -123,9 +126,22 @@ class ConfigDialog(QDialog):
         self.spin_export_rotate.setSingleStep(1000)
         self.spin_export_rotate.setValue(100000)
         self.checkbox_export_auto = QCheckBox("Automatyczny zapis pakietów i alertów", export_group)
+        # Katalog docelowy
+        self.input_export_dir = QLineEdit(export_group)
+        self.input_export_dir.setReadOnly(True)
+        btn_pick_dir = QPushButton("Wybierz...", export_group)
+        def pick_dir():
+            path = QFileDialog.getExistingDirectory(self, "Wybierz katalog docelowy")
+            if path:
+                self.input_export_dir.setText(path)
+        btn_pick_dir.clicked.connect(pick_dir)
+        dir_layout = QHBoxLayout()
+        dir_layout.addWidget(self.input_export_dir)
+        dir_layout.addWidget(btn_pick_dir)
         export_form.addRow("Format:", self.combo_export_format)
         export_form.addRow("Rotacja co (wiersze):", self.spin_export_rotate)
         export_form.addRow(self.checkbox_export_auto)
+        export_form.addRow("Katalog docelowy:", dir_layout)
 
         form = QFormLayout()
         form.addRow("Interfejs:", self.select_interface)
@@ -134,7 +150,30 @@ class ConfigDialog(QDialog):
         form.addRow("", self.checkbox_simulation)
         form.addRow(ai_group)
         form.addRow(alerts_group)
+        # Reset do domyślnych
+        btn_reset = QPushButton("Przywróć domyślne", self)
+        def reset_defaults():
+            # Capture
+            self.select_interface.setCurrentIndex(0 if self.select_interface.count() else -1)
+            self.input_filter.setText("")
+            self.checkbox_simulation.setChecked(True)
+            # AI
+            self.checkbox_ai_enabled.setChecked(True)
+            self.spin_ai_combined_threshold.setValue(0.7)
+            self.spin_ai_contamination.setValue(0.02)
+            self.spin_ai_refit.setValue(500)
+            self.checkbox_ai_stream.setChecked(True)
+            self.spin_ai_stream_threshold.setValue(2.5)
+            self.checkbox_alerts_only_anomalies.setChecked(False)
+            # Export
+            self.combo_export_format.setCurrentIndex(0)
+            self.spin_export_rotate.setValue(100000)
+            self.checkbox_export_auto.setChecked(False)
+            self.input_export_dir.setText("")
+        btn_reset.clicked.connect(reset_defaults)
+
         form.addRow(export_group)
+        form.addRow(btn_reset)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, self)
         buttons.accepted.connect(self.accept)
@@ -160,5 +199,6 @@ class ConfigDialog(QDialog):
             "format": self.combo_export_format.currentText().lower(),
             "rotate_rows": int(self.spin_export_rotate.value()),
             "auto": bool(self.checkbox_export_auto.isChecked()),
+            "dir": self.input_export_dir.text().strip() or "",
         }
         return interface, bpf_filter, simulation, ai_cfg, export_cfg
