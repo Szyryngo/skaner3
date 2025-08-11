@@ -143,3 +143,12 @@ pytest --cov=core tests/
 ## 📄 Licencja
 
 MIT License - zobacz [LICENSE](LICENSE) dla szczegółów.
+
+### Dokumentacja
+- [x] README.md zaktualizowany do v0.3.0
+- [x] SESSION_NOTES.md zaktualizowany
+- [x] Historia zmian w README
+- [x] BUGS_AND_FIXES.md - dokumentacja błędów i rozwiązań
+- [ ] Dokumentacja API
+- [ ] Przewodnik użytkownika
+- [ ] Przewodnik dewelopera

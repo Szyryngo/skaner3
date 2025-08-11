@@ -129,6 +129,7 @@ Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagr
 - [x] README.md zaktualizowany do v0.3.0
 - [x] SESSION_NOTES.md zaktualizowany
 - [x] Historia zmian w README
+- [x] BUGS_AND_FIXES.md - dokumentacja błędów i rozwiązań
 - [ ] Dokumentacja API
 - [ ] Przewodnik użytkownika
 - [ ] Przewodnik dewelopera
