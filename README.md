@@ -65,3 +65,7 @@ Szczegółowe założenia i postępy znajdziesz w pliku `SESSION_NOTES.md`.
 - Sekcja AI: włącz/wyłącz IsolationForest; próg `combined_threshold`; model strumieniowy i próg Z
 - Sekcja Alerty: „tylko anomalie” (wycisza alerty reguł)
 - Sekcja Eksport: format CSV/TXT, rotacja co N wierszy, automatyczny zapis podczas przechwytywania
+
+## Konfiguracja użytkownika
+- Zapis/Wczytanie: Plik → „Zapisz konfigurację…” / „Wczytaj konfigurację…” (format JSON)
+- Stan UI jest zachowywany (układ splitterów, aktywna zakładka, geometria okna)

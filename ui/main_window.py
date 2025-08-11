@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
 )
 from PyQt5.QtCore import QSettings
+import json
 import psutil
 
 from core.ai_engine import AIEngine
@@ -68,15 +69,15 @@ class MainWindow(QMainWindow):
         detail_layout.addWidget(QLabel("Geolokalizacja (dst/src):"))
         detail_layout.addWidget(self.detail_geo)
 
-        splitter = QSplitter(self)
-        splitter.addWidget(self.packet_viewer)
-        splitter.addWidget(detail_widget)
-        splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 2)
+        self.splitter = QSplitter(self)
+        self.splitter.addWidget(self.packet_viewer)
+        self.splitter.addWidget(detail_widget)
+        self.splitter.setStretchFactor(0, 3)
+        self.splitter.setStretchFactor(1, 2)
 
         tab_packets = QWidget(self)
         tab_packets_layout = QVBoxLayout(tab_packets)
-        tab_packets_layout.addWidget(splitter)
+        tab_packets_layout.addWidget(self.splitter)
 
         self.tabs.addTab(tab_packets, "Pakiety")
         self.tabs.addTab(self.alert_viewer, "Alerty")
@@ -138,6 +139,8 @@ class MainWindow(QMainWindow):
 
         # Inicjalizacja AI z konfiguracji
         self._recreate_ai()
+        # Przywrócenie UI
+        self._restore_ui_settings()
 
     # --- UI helpers ---
     def _create_actions(self) -> None:
@@ -167,6 +170,15 @@ class MainWindow(QMainWindow):
         action_export_alerts = QAction("Eksportuj alerty...", self)
         action_export_alerts.triggered.connect(self.export_alerts)
         menu.addAction(action_export_alerts)
+
+        menu.addSeparator()
+        action_save_cfg = QAction("Zapisz konfigurację...", self)
+        action_save_cfg.triggered.connect(self.export_config)
+        menu.addAction(action_save_cfg)
+
+        action_load_cfg = QAction("Wczytaj konfigurację...", self)
+        action_load_cfg.triggered.connect(self.import_config)
+        menu.addAction(action_load_cfg)
 
         menu.addSeparator()
         action_exit = QAction("Zakończ", self)
@@ -200,6 +212,43 @@ class MainWindow(QMainWindow):
             self.resource_label.setText(f"CPU: {cpu:.0f}%  RAM: {ram:.0f}%")
         except Exception:
             self.resource_label.setText("CPU: n/a  RAM: n/a")
+
+    # --- Settings (UI/state) ---
+    def _save_ui_settings(self) -> None:
+        settings = QSettings("Skaner3", "AI Network Sniffer")
+        try:
+            geom_hex = bytes(self.saveGeometry().toHex()).decode("ascii")
+            settings.setValue("ui/geometry", geom_hex)
+        except Exception:
+            pass
+        try:
+            settings.setValue("ui/tabs_index", self.tabs.currentIndex())
+        except Exception:
+            pass
+        try:
+            settings.setValue("ui/splitter_sizes", self.splitter.sizes())
+        except Exception:
+            pass
+
+    def _restore_ui_settings(self) -> None:
+        settings = QSettings("Skaner3", "AI Network Sniffer")
+        try:
+            geom_hex = settings.value("ui/geometry", None, type=str)
+            if geom_hex:
+                self.restoreGeometry(bytes.fromhex(geom_hex))
+        except Exception:
+            pass
+        try:
+            idx = settings.value("ui/tabs_index", 0, type=int)
+            self.tabs.setCurrentIndex(int(idx))
+        except Exception:
+            pass
+        try:
+            sizes = settings.value("ui/splitter_sizes", None)
+            if isinstance(sizes, list) and sizes:
+                self.splitter.setSizes([int(x) for x in sizes])
+        except Exception:
+            pass
 
     def _recreate_ai(self) -> None:
         try:
@@ -379,6 +428,99 @@ class MainWindow(QMainWindow):
                     f.write("\n")
         except Exception:
             pass
+
+    # --- Config import/export ---
+    def export_config(self) -> None:
+        try:
+            from PyQt5.QtWidgets import QFileDialog
+            path, _ = QFileDialog.getSaveFileName(self, "Zapisz konfigurację", "config.json", "JSON (*.json)")
+            if not path:
+                return
+            cfg = {
+                "capture": {
+                    "interface": self.cfg_interface,
+                    "bpf": self.cfg_bpf_filter,
+                    "simulation": self.cfg_simulation,
+                },
+                "ai": self.cfg_ai,
+                "export": self.cfg_export,
+                "ui": {
+                    "tabs_index": self.tabs.currentIndex(),
+                    "splitter_sizes": self.splitter.sizes(),
+                    "geometry": bytes(self.saveGeometry().toHex()).decode("ascii"),
+                },
+                "version": 1,
+            }
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def import_config(self) -> None:
+        try:
+            from PyQt5.QtWidgets import QFileDialog
+            path, _ = QFileDialog.getOpenFileName(self, "Wczytaj konfigurację", "", "JSON (*.json)")
+            if not path:
+                return
+            with open(path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            cap = cfg.get("capture", {})
+            ai = cfg.get("ai", {})
+            exp = cfg.get("export", {})
+            ui_state = cfg.get("ui", {})
+
+            # Zapis do QSettings
+            settings = QSettings("Skaner3", "AI Network Sniffer")
+            if cap.get("interface") is not None:
+                settings.setValue("capture/interface", cap.get("interface"))
+            settings.setValue("capture/bpf", cap.get("bpf", ""))
+            settings.setValue("capture/simulation", bool(cap.get("simulation", True)))
+            # AI
+            for key, qkey in [
+                ("ml_enabled", "ai/ml_enabled"),
+                ("ml_contamination", "ai/contamination"),
+                ("ml_refit_interval", "ai/refit_interval"),
+                ("ml_stream_enabled", "ai/stream_enabled"),
+                ("stream_z_threshold", "ai/stream_z"),
+                ("combined_threshold", "ai/combined_threshold"),
+                ("alerts_only_anomalies", "ai/alerts_only_anomalies"),
+            ]:
+                if key in ai:
+                    settings.setValue(qkey, ai[key])
+            # Export
+            for key, qkey in [
+                ("format", "export/format"),
+                ("rotate_rows", "export/rotate_rows"),
+                ("auto", "export/auto"),
+            ]:
+                if key in exp:
+                    settings.setValue(qkey, exp[key])
+            # UI
+            try:
+                if "geometry" in ui_state:
+                    self.restoreGeometry(bytes.fromhex(ui_state["geometry"]))
+                if "tabs_index" in ui_state:
+                    self.tabs.setCurrentIndex(int(ui_state["tabs_index"]))
+                if "splitter_sizes" in ui_state and ui_state["splitter_sizes"]:
+                    self.splitter.setSizes([int(x) for x in ui_state["splitter_sizes"]])
+            except Exception:
+                pass
+
+            # Odśwież lokalne struktury i AI
+            self.cfg_interface = settings.value("capture/interface", None, type=str)
+            self.cfg_bpf_filter = settings.value("capture/bpf", None, type=str)
+            sim_val = settings.value("capture/simulation", True)
+            self.cfg_simulation = bool(sim_val if isinstance(sim_val, bool) else str(sim_val).lower() in {"true", "1"})
+            self.cfg_ai.update(ai)
+            self.cfg_export.update(exp)
+            self._recreate_ai()
+            self._set_status("Config loaded")
+        except Exception:
+            pass
+
+    def closeEvent(self, event) -> None:  # type: ignore[override]
+        self._save_ui_settings()
+        super().closeEvent(event)
 
     def _enforce_row_limit(self, max_rows: int = 5000) -> None:
         table = self.packet_viewer.table

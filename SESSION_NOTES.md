@@ -73,6 +73,7 @@ skaner3/
 - [x] Rozszerzyć `AIEngine` o model ML (IsolationForest) i trening inkrementalny (Half‑Space Trees)
 - [x] Dodać sekcję AI w konfiguracji i kartę statusu AI
 - [ ] Dodać zapisywanie i ładowanie konfiguracji użytkownika
+- [x] Zapis/Wczytanie konfiguracji (JSON) + zachowanie układu UI (splitter, zakładki, geometria)
 - [x] Zapisywanie ustawień w `QSettings`
 - [ ] Dodać eksport/import logów pakietów i alertów
 - [x] Eksport pakietów/alertów z GUI; rotacja plików w `LogWriter`
