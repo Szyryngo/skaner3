@@ -58,10 +58,11 @@ skaner3/
 - **2025-08-11 (UX + funkcje):**
   - `ui/packet_viewer.py`: filtry, wyszukiwarka, menu kontekstowe, dopasowanie kolumn,
   - `ui/alert_viewer.py`: kolorowanie alertów wg score,
-  - `ui/main_window.py`: pasek narzędzi, licznik pakietów, batch update tabeli, limit 5000 wierszy, monitor CPU/RAM,
-  - `core/utils.py`: geolokalizacja IP, hexdump/ASCII, lista interfejsów z kategoryzacją (Wi‑Fi/Ethernet/...)
-  - `ui/config_dialog.py`: wybór aktywnych interfejsów, opcja pokazania nieaktywnych, ikony/kolory typów,
-  - Zapamiętywanie ostatnio wybranego interfejsu (`QSettings`).
+  - `ui/main_window.py`: pasek narzędzi, skróty (F5/Shift+F5/Ctrl+,), licznik pakietów, batch update tabeli, limit 5000 wierszy, monitor CPU/RAM,
+  - `core/utils.py`: geolokalizacja IP, hexdump/ASCII, lista interfejsów z kategoryzacją (Wi‑Fi/Ethernet/Cellular/Loopback/Virtual), `LogWriter` z rotacją,
+  - `ui/config_dialog.py`: wybór aktywnych interfejsów, opcja pokazania nieaktywnych, ikony/kolory typów; sekcja AI (włącz/wyłącz ML, contamination, refit), sekcja eksportu (format, rotacja),
+  - Zapamiętywanie ustawień w `QSettings` (interfejs, BPF, symulacja, AI, eksport).
+  - `ui/ai_status_viewer.py`: karta „AI” – status modelu i ostatnie powody/score; `core/ai_engine.py` – IsolationForest + heurystyka, `get_status()`.
 
 
 ---
@@ -70,8 +71,11 @@ skaner3/
 
 - [x] Rozwinąć szkielet plików `core/` i `ui/`
 - [ ] Rozszerzyć `AIEngine` o model ML (np. IsolationForest) i trening inkrementalny
+- [x] Dodać sekcję AI w konfiguracji i kartę statusu AI
 - [ ] Dodać zapisywanie i ładowanie konfiguracji użytkownika
+- [x] Zapisywanie ustawień w `QSettings`
 - [ ] Dodać eksport/import logów pakietów i alertów
+- [x] Eksport pakietów/alertów z GUI; rotacja plików w `LogWriter`
 - [ ] Testy jednostkowe dla utils/ai/rules
 - [ ] Ikony w zasobach i spójny theme (jasny/ciemny)
 - [ ] Skróty klawiaturowe (Start/Stop/Focus filter)
