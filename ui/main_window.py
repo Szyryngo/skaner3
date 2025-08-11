@@ -90,15 +90,6 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self._set_status("Idle")
 
-        # Menu/Actions
-        self._create_actions()
-
-        # Timer do przetwarzania pakietów → UI
-        self.timer = QTimer(self)
-        self.timer.setInterval(100)
-        self.timer.timeout.connect(self._drain_queue)
-        self.timer.start()
-
         # Timer do metryk systemowych (CPU/RAM)
         self.resource_label = QLabel("CPU: --%  RAM: --%", self)
         self.resource_timer = QTimer(self)
@@ -141,6 +132,15 @@ class MainWindow(QMainWindow):
 
         # Połączenie wyboru pakietu
         self.packet_viewer.packet_selected.connect(self._on_packet_selected)
+
+        # Menu/Actions
+        self._create_actions()
+
+        # Timer do przetwarzania pakietów → UI
+        self.timer = QTimer(self)
+        self.timer.setInterval(100)
+        self.timer.timeout.connect(self._drain_queue)
+        self.timer.start()
 
         # Inicjalizacja AI z konfiguracji
         self._recreate_ai()
