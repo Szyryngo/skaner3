@@ -114,6 +114,8 @@ class MainWindow(QMainWindow):
             "ml_enabled": bool(settings.value("ai/ml_enabled", True)),
             "ml_contamination": float(settings.value("ai/contamination", 0.02)),
             "ml_refit_interval": int(settings.value("ai/refit_interval", 500)),
+            "ml_stream_enabled": bool(settings.value("ai/stream_enabled", True)),
+            "stream_z_threshold": float(settings.value("ai/stream_z", 2.5)),
         }
         self.cfg_export: dict = {
             "format": str(settings.value("export/format", "csv")),
@@ -200,6 +202,8 @@ class MainWindow(QMainWindow):
                 ml_enabled=self.cfg_ai.get("ml_enabled", True),
                 ml_contamination=self.cfg_ai.get("ml_contamination", 0.02),
                 ml_refit_interval=self.cfg_ai.get("ml_refit_interval", 500),
+                ml_stream_enabled=self.cfg_ai.get("ml_stream_enabled", True),
+                stream_z_threshold=self.cfg_ai.get("stream_z_threshold", 2.5),
             )
         except Exception:
             self.ai_engine = AIEngine()
@@ -250,6 +254,8 @@ class MainWindow(QMainWindow):
             settings.setValue("ai/refit_interval", self.cfg_ai.get("ml_refit_interval", 500))
             settings.setValue("export/format", self.cfg_export.get("format", "csv"))
             settings.setValue("export/rotate_rows", self.cfg_export.get("rotate_rows", 100000))
+            settings.setValue("ai/stream_enabled", self.cfg_ai.get("ml_stream_enabled", True))
+            settings.setValue("ai/stream_z", self.cfg_ai.get("stream_z_threshold", 2.5))
             self._recreate_ai()
             self._set_status("Config updated")
 

@@ -90,9 +90,16 @@ class ConfigDialog(QDialog):
         self.spin_ai_refit.setRange(100, 20000)
         self.spin_ai_refit.setSingleStep(100)
         self.spin_ai_refit.setValue(500)
+        self.checkbox_ai_stream = QCheckBox("Włącz model strumieniowy (Half-Space Trees)", ai_group)
         ai_form.addRow(self.checkbox_ai_enabled)
         ai_form.addRow("Contamination:", self.spin_ai_contamination)
         ai_form.addRow("Refit interval:", self.spin_ai_refit)
+        self.spin_ai_stream_threshold = QDoubleSpinBox(ai_group)
+        self.spin_ai_stream_threshold.setRange(0.5, 10.0)
+        self.spin_ai_stream_threshold.setSingleStep(0.1)
+        self.spin_ai_stream_threshold.setValue(2.5)
+        ai_form.addRow(self.checkbox_ai_stream)
+        ai_form.addRow("Z-threshold (stream):", self.spin_ai_stream_threshold)
 
         # Sekcja eksportu
         export_group = QGroupBox("Eksport logów")
@@ -129,6 +136,8 @@ class ConfigDialog(QDialog):
             "ml_enabled": bool(self.checkbox_ai_enabled.isChecked()),
             "ml_contamination": float(self.spin_ai_contamination.value()),
             "ml_refit_interval": int(self.spin_ai_refit.value()),
+            "ml_stream_enabled": bool(self.checkbox_ai_stream.isChecked()),
+            "stream_z_threshold": float(self.spin_ai_stream_threshold.value()),
         }
         export_cfg = {
             "format": self.combo_export_format.currentText().lower(),
