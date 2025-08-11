@@ -24,7 +24,7 @@ import psutil
 from core.ai_engine import AIEngine
 from core.packet_sniffer import PacketSniffer
 from core.rules import RuleEngine
-from core.utils import packetinfo_to_row, PacketInfo
+from core.utils import packetinfo_to_row, PacketInfo, LogWriter
 from .ai_status_viewer import AIStatusViewer
 from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
@@ -116,10 +116,13 @@ class MainWindow(QMainWindow):
             "ml_refit_interval": int(settings.value("ai/refit_interval", 500)),
             "ml_stream_enabled": bool(settings.value("ai/stream_enabled", True)),
             "stream_z_threshold": float(settings.value("ai/stream_z", 2.5)),
+            "combined_threshold": float(settings.value("ai/combined_threshold", 0.7)),
+            "alerts_only_anomalies": bool(settings.value("ai/alerts_only_anomalies", False)),
         }
         self.cfg_export: dict = {
             "format": str(settings.value("export/format", "csv")),
             "rotate_rows": int(settings.value("export/rotate_rows", 100000)),
+            "auto": bool(settings.value("export/auto", False)),
         }
 
         # Bufor indeksowany od najstarszego
@@ -127,6 +130,8 @@ class MainWindow(QMainWindow):
 
         # Statystyki
         self._total_packets: int = 0
+        self._packet_logger: Optional[LogWriter] = None
+        self._alert_logger: Optional[LogWriter] = None
 
         # Połączenie wyboru pakietu
         self.packet_viewer.packet_selected.connect(self._on_packet_selected)
@@ -204,6 +209,7 @@ class MainWindow(QMainWindow):
                 ml_refit_interval=self.cfg_ai.get("ml_refit_interval", 500),
                 ml_stream_enabled=self.cfg_ai.get("ml_stream_enabled", True),
                 stream_z_threshold=self.cfg_ai.get("stream_z_threshold", 2.5),
+                combined_threshold=self.cfg_ai.get("combined_threshold", 0.7),
             )
         except Exception:
             self.ai_engine = AIEngine()
@@ -219,6 +225,7 @@ class MainWindow(QMainWindow):
             bpf_filter=self.cfg_bpf_filter,
         )
         self.sniffer.start()
+        self._setup_loggers()
         self._update_status()
 
     def stop_capture(self) -> None:
@@ -226,6 +233,7 @@ class MainWindow(QMainWindow):
             return
         self.sniffer.stop()
         self.sniffer = None
+        self._teardown_loggers()
         self._update_status()
 
     def open_config(self) -> None:
@@ -256,6 +264,9 @@ class MainWindow(QMainWindow):
             settings.setValue("export/rotate_rows", self.cfg_export.get("rotate_rows", 100000))
             settings.setValue("ai/stream_enabled", self.cfg_ai.get("ml_stream_enabled", True))
             settings.setValue("ai/stream_z", self.cfg_ai.get("stream_z_threshold", 2.5))
+            settings.setValue("ai/combined_threshold", self.cfg_ai.get("combined_threshold", 0.7))
+            settings.setValue("ai/alerts_only_anomalies", self.cfg_ai.get("alerts_only_anomalies", False))
+            settings.setValue("export/auto", self.cfg_export.get("auto", False))
             self._recreate_ai()
             self._set_status("Config updated")
 
@@ -294,15 +305,21 @@ class MainWindow(QMainWindow):
         ai = self.ai_engine.analyze_packet(packet_info)
         if ai.get("is_anomaly"):
             self.alert_viewer.add_alert("AI anomaly", row, score=float(ai.get("score", 0.0)))
+            self._log_alert(["AI anomaly", str(ai.get("score", "")), row["time"], row["src_ip"], row["dst_ip"], row["protocol"], row["length"]])
 
-        for alert in self.rule_engine.evaluate(packet_info):
-            self.alert_viewer.add_alert(alert, row)
+        if not self.cfg_ai.get("alerts_only_anomalies", False):
+            for alert in self.rule_engine.evaluate(packet_info):
+                self.alert_viewer.add_alert(alert, row)
+                self._log_alert([alert, "", row["time"], row["src_ip"], row["dst_ip"], row["protocol"], row["length"]])
 
         # Aktualizuj status AI na bieżąco przy anomaliach
         try:
             self.ai_status.update_status(self.ai_engine.get_status())
         except Exception:
             pass
+
+        # Zapis pakietu
+        self._log_packet(row)
 
     # --- Selection details ---
     def _on_packet_selected(self, row_index: int) -> None:
@@ -370,3 +387,45 @@ class MainWindow(QMainWindow):
             table.removeRow(0)
             if self._packets_buffer:
                 self._packets_buffer.pop(0)
+
+    # --- Logging helpers ---
+    def _setup_loggers(self) -> None:
+        if not self.cfg_export.get("auto", False):
+            self._teardown_loggers()
+            return
+        is_csv = (self.cfg_export.get("format", "csv") == "csv")
+        rotate = int(self.cfg_export.get("rotate_rows", 100000))
+        try:
+            self._packet_logger = LogWriter("packets_log.csv" if is_csv else "packets_log.txt", is_csv=is_csv, max_rows_per_file=rotate, headers=["time","src_ip","dst_ip","src_port","dst_port","protocol","length"])
+            self._alert_logger = LogWriter("alerts_log.csv" if is_csv else "alerts_log.txt", is_csv=is_csv, max_rows_per_file=rotate, headers=["type","score","time","src_ip","dst_ip","protocol","length"])
+        except Exception:
+            self._packet_logger = None
+            self._alert_logger = None
+
+    def _teardown_loggers(self) -> None:
+        try:
+            if self._packet_logger:
+                self._packet_logger.close()
+        finally:
+            self._packet_logger = None
+        try:
+            if self._alert_logger:
+                self._alert_logger.close()
+        finally:
+            self._alert_logger = None
+
+    def _log_packet(self, row: dict) -> None:
+        if not self._packet_logger:
+            return
+        try:
+            self._packet_logger.write_row([row.get("time",""), row.get("src_ip",""), row.get("dst_ip",""), row.get("src_port",""), row.get("dst_port",""), row.get("protocol",""), row.get("length","")])
+        except Exception:
+            pass
+
+    def _log_alert(self, row: list[str]) -> None:
+        if not self._alert_logger:
+            return
+        try:
+            self._alert_logger.write_row(row)
+        except Exception:
+            pass

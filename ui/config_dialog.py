@@ -82,6 +82,10 @@ class ConfigDialog(QDialog):
         ai_form = QFormLayout(ai_group)
         self.checkbox_ai_enabled = QCheckBox("Włącz IsolationForest", ai_group)
         self.checkbox_ai_enabled.setChecked(True)
+        self.spin_ai_combined_threshold = QDoubleSpinBox(ai_group)
+        self.spin_ai_combined_threshold.setRange(0.1, 3.0)
+        self.spin_ai_combined_threshold.setSingleStep(0.05)
+        self.spin_ai_combined_threshold.setValue(0.7)
         self.spin_ai_contamination = QDoubleSpinBox(ai_group)
         self.spin_ai_contamination.setRange(0.001, 0.5)
         self.spin_ai_contamination.setSingleStep(0.001)
@@ -92,6 +96,7 @@ class ConfigDialog(QDialog):
         self.spin_ai_refit.setValue(500)
         self.checkbox_ai_stream = QCheckBox("Włącz model strumieniowy (Half-Space Trees)", ai_group)
         ai_form.addRow(self.checkbox_ai_enabled)
+        ai_form.addRow("Combined threshold:", self.spin_ai_combined_threshold)
         ai_form.addRow("Contamination:", self.spin_ai_contamination)
         ai_form.addRow("Refit interval:", self.spin_ai_refit)
         self.spin_ai_stream_threshold = QDoubleSpinBox(ai_group)
@@ -100,6 +105,13 @@ class ConfigDialog(QDialog):
         self.spin_ai_stream_threshold.setValue(2.5)
         ai_form.addRow(self.checkbox_ai_stream)
         ai_form.addRow("Z-threshold (stream):", self.spin_ai_stream_threshold)
+
+        # Sekcja Alerty
+        alerts_group = QGroupBox("Alerty")
+        alerts_form = QFormLayout(alerts_group)
+        self.checkbox_alerts_only_anomalies = QCheckBox("Tylko anomalie (wyłącz alerty reguł)", alerts_group)
+        self.checkbox_alerts_only_anomalies.setChecked(False)
+        alerts_form.addRow(self.checkbox_alerts_only_anomalies)
 
         # Sekcja eksportu
         export_group = QGroupBox("Eksport logów")
@@ -110,8 +122,10 @@ class ConfigDialog(QDialog):
         self.spin_export_rotate.setRange(1000, 1000000)
         self.spin_export_rotate.setSingleStep(1000)
         self.spin_export_rotate.setValue(100000)
+        self.checkbox_export_auto = QCheckBox("Automatyczny zapis pakietów i alertów", export_group)
         export_form.addRow("Format:", self.combo_export_format)
         export_form.addRow("Rotacja co (wiersze):", self.spin_export_rotate)
+        export_form.addRow(self.checkbox_export_auto)
 
         form = QFormLayout()
         form.addRow("Interfejs:", self.select_interface)
@@ -119,6 +133,7 @@ class ConfigDialog(QDialog):
         form.addRow("BPF filter:", self.input_filter)
         form.addRow("", self.checkbox_simulation)
         form.addRow(ai_group)
+        form.addRow(alerts_group)
         form.addRow(export_group)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, self)
@@ -138,9 +153,12 @@ class ConfigDialog(QDialog):
             "ml_refit_interval": int(self.spin_ai_refit.value()),
             "ml_stream_enabled": bool(self.checkbox_ai_stream.isChecked()),
             "stream_z_threshold": float(self.spin_ai_stream_threshold.value()),
+            "combined_threshold": float(self.spin_ai_combined_threshold.value()),
+            "alerts_only_anomalies": bool(self.checkbox_alerts_only_anomalies.isChecked()),
         }
         export_cfg = {
             "format": self.combo_export_format.currentText().lower(),
             "rotate_rows": int(self.spin_export_rotate.value()),
+            "auto": bool(self.checkbox_export_auto.isChecked()),
         }
         return interface, bpf_filter, simulation, ai_cfg, export_cfg

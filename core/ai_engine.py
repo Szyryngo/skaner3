@@ -36,6 +36,7 @@ class AIEngine:
         ml_buffer_size: int = 4000,
         ml_stream_enabled: bool = True,
         stream_z_threshold: float = 2.5,
+        combined_threshold: float = 0.7,
     ) -> None:
         self.large_packet_threshold = large_packet_threshold
         self.ml_enabled = ml_enabled and SKLEARN_AVAILABLE
@@ -44,6 +45,7 @@ class AIEngine:
         self.ml_buffer_size = max(500, ml_buffer_size)
         self.ml_stream_enabled = ml_stream_enabled and RIVER_AVAILABLE
         self.stream_z_threshold = stream_z_threshold
+        self.combined_threshold = combined_threshold
 
         self._buffer: List[np.ndarray] = []
         self._model: Optional[IsolationForest] = None
@@ -176,7 +178,7 @@ class AIEngine:
             combined_score += min(1.0, ml_score)
         if stream_z is not None and self.stream_z_threshold > 0:
             combined_score += float(max(0.0, min(1.0, stream_z / self.stream_z_threshold)))
-        is_anomaly = (combined_score >= 0.7) or is_ml_anomaly or is_stream_anomaly
+        is_anomaly = (combined_score >= self.combined_threshold) or is_ml_anomaly or is_stream_anomaly
 
         self._last_reasons = reasons
         self._last_combined_score = float(combined_score if combined_score is not None else heuristic_score)
