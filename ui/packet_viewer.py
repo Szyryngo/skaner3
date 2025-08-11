@@ -60,13 +60,55 @@ class PacketViewer(QWidget):
         self.filter_text.textChanged.connect(self.apply_filters)
         self.filter_protocol.currentIndexChanged.connect(self.apply_filters)
 
-    def add_packet_row(self, row: Dict[str, str]) -> None:
+    def add_packet_row(self, row: Dict[str, str], score: Optional[float] = None) -> None:
         row_index = self.table.rowCount()
         self.table.insertRow(row_index)
         for col_index, key in enumerate(["time", "src_ip", "dst_ip", "src_port", "dst_port", "protocol", "length"]):
-            self.table.setItem(row_index, col_index, QTableWidgetItem(row.get(key, "")))
+            item = QTableWidgetItem(row.get(key, ""))
+            self.table.setItem(row_index, col_index, item)
+            
+        # Koloruj wiersz według score zagrożenia
+        if score is not None:
+            self._color_row_by_score(row_index, score)
+            
         # Opcjonalnie można przewijać do końca
         self.table.scrollToBottom()
+        
+    def _color_row_by_score(self, row_index: int, score: float) -> None:
+        """Koloruj wiersz według score zagrożenia AI"""
+        from PyQt5.QtGui import QColor, QFont
+        
+        if score >= 0.9:
+            # Czerwony - wysokie zagrożenie
+            color = QColor(255, 200, 200)
+            text_color = QColor(139, 0, 0)
+            bold = True
+        elif score >= 0.7:
+            # Pomarańczowy - średnie zagrożenie
+            color = QColor(255, 230, 200)
+            text_color = QColor(139, 69, 19)
+            bold = True
+        elif score >= 0.5:
+            # Żółty - niskie zagrożenie
+            color = QColor(255, 255, 200)
+            text_color = QColor(85, 85, 0)
+            bold = False
+        else:
+            # Zielony - bezpieczny
+            color = QColor(200, 255, 200)
+            text_color = QColor(0, 100, 0)
+            bold = False
+            
+        # Zastosuj kolory do wszystkich komórek wiersza
+        for col in range(self.table.columnCount()):
+            item = self.table.item(row_index, col)
+            if item:
+                item.setBackground(color)
+                item.setForeground(text_color)
+                if bold:
+                    font = item.font()
+                    font.setBold(True)
+                    item.setFont(font)
 
     def clear_all(self) -> None:
         self.table.setRowCount(0)

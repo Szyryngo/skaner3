@@ -46,12 +46,19 @@ class MainWindow(QMainWindow):
         # Kolejka pakietów od sniffera
         self.packet_queue: Queue[PacketInfo] = Queue(maxsize=5000)
         self.sniffer: Optional[PacketSniffer] = None
+        
+        # Bufor pakietów dla UI
+        self._packets_buffer: list[PacketInfo] = []
+        self._total_packets = 0
 
         # UI
         self.tabs = QTabWidget(self)
         self.packet_viewer = PacketViewer(self)
         self.alert_viewer = AlertViewer(self)
         self.ai_status = AIStatusViewer(self)
+        
+        # Przekaż bufor pakietów do AlertViewer dla podglądu
+        self.alert_viewer.set_packets_buffer(self._packets_buffer)
 
         # Szczegóły pakietu (hex/ascii/geolokalizacja)
         self.detail_hex = QTextEdit(self)
@@ -121,9 +128,6 @@ class MainWindow(QMainWindow):
             "dir": str(settings.value("export/dir", "")),
             "cleanup_days": int(settings.value("export/cleanup_days", 0)),
         }
-
-        # Bufor indeksowany od najstarszego
-        self._packets_buffer: list[PacketInfo] = []
 
         # Statystyki
         self._total_packets: int = 0
@@ -355,16 +359,23 @@ class MainWindow(QMainWindow):
         # Zachowaj kolejność: od najstarszego do najnowszego
         self._packets_buffer.append(packet_info)
         row = packetinfo_to_row(packet_info)
-        self.packet_viewer.add_packet_row(row)
+        
+        # Analiza AI przed dodaniem do UI
+        ai = self.ai_engine.analyze_packet(packet_info)
+        score = float(ai.get("score", 0.0))
+        
+        # Dodaj pakiet z kolorowaniem według score
+        self.packet_viewer.add_packet_row(row, score=score)
         self._total_packets += 1
         if (self._total_packets % 20) == 0:
             self._update_status()
 
-        ai = self.ai_engine.analyze_packet(packet_info)
+        # Dodaj alert jeśli to anomalia
         if ai.get("is_anomaly"):
-            self.alert_viewer.add_alert("AI anomaly", row, score=float(ai.get("score", 0.0)))
-            self._log_alert(["AI anomaly", str(ai.get("score", "")), row["time"], row["src_ip"], row["dst_ip"], row["protocol"], row["length"]])
+            self.alert_viewer.add_alert("AI anomaly", row, score=score)
+            self._log_alert(["AI anomaly", str(score), row["time"], row["src_ip"], row["dst_ip"], row["protocol"], row["length"]])
 
+        # Dodaj alerty z reguł (jeśli nie tylko anomalie)
         if not self.cfg_ai.get("alerts_only_anomalies", False):
             for alert in self.rule_engine.evaluate(packet_info):
                 self.alert_viewer.add_alert(alert, row)

@@ -1,6 +1,6 @@
 # SESSION_NOTES.md - AI Network Sniffer
 
-## Projekt: AI Network Sniffer v0.3.1
+## Projekt: AI Network Sniffer v0.3.2
 
 ### Cel
 Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagrożeń bezpieczeństwa.
@@ -65,6 +65,14 @@ Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagr
 - [x] Tytuł okna z wersją programu (v0.3.0)
 - [x] Naprawione błędy spójności konfiguracji
 
+### ✅ Enhanced UI/UX & Packet Visualization (v0.3.2) - ZAKOŃCZONE
+- [x] Podgląd pakietów w alertach (hex dump, ASCII)
+- [x] Zaawansowane kolorowanie pakietów według wagi zagrożenia AI
+- [x] Kolorowanie wierszy w tabeli pakietów według score
+- [x] Splitter w widoku alertów z listą i szczegółami
+- [x] Lepsze wizualne rozróżnienie poziomów zagrożenia (czerwony/pomarańczowy/żółty/zielony)
+- [x] Pogrubione czcionki dla wysokich zagrożeń
+
 ### 🔧 Naprawione błędy (v0.3.0)
 - [x] Błąd z niezdefiniowaną zmienną `decision` w `AIEngine`
 - [x] Brakujące importy `from collections import deque`
@@ -74,11 +82,12 @@ Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagr
 
 ## Aktualny stan
 
-### Wersja: 0.3.1
+### Wersja: 0.3.2
 - **Nazwa**: AI Network Sniffer
-- **Status**: Stabilna wersja z pełną funkcjonalnością i naprawionymi błędami
+- **Status**: Stabilna wersja z pełną funkcjonalnością, naprawionymi błędami i nowymi funkcjami UI
 - **Wszystkie główne funkcje**: Zaimplementowane
 - **Wszystkie błędy**: Naprawione i przetestowane
+- **Nowe funkcje**: Podgląd pakietów w alertach, zaawansowane kolorowanie
 
 ### Pliki zaimplementowane
 - ✅ `core/__init__.py` - nazwa i wersja aplikacji
