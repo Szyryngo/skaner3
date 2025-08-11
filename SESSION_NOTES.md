@@ -47,12 +47,31 @@ skaner3/
 ### Log zmian i postępu
 
 - **2025-08-11:** Inicjalizacja repozytorium, utworzenie pierwszej wersji struktury katalogów i plików.
+- **2025-08-11 (MVP):** Dodano działające szkielety:
+  - `core/packet_sniffer.py` z trybem `AsyncSniffer` (scapy) i trybem symulacji,
+  - `core/ai_engine.py` prosta heurystyka (duży pakiet, podejrzane porty),
+  - `core/rules.py` podstawowe reguły (blokowane porty, duża długość),
+  - `core/utils.py` konwersje pakietów i generator danych testowych,
+  - `ui/main_window.py`, `ui/packet_viewer.py`, `ui/alert_viewer.py`, `ui/config_dialog.py` – GUI z zakładkami i konfiguracją,
+  - `main.py` – start aplikacji z PyQt5.
+
+- **2025-08-11 (UX + funkcje):**
+  - `ui/packet_viewer.py`: filtry, wyszukiwarka, menu kontekstowe, dopasowanie kolumn,
+  - `ui/alert_viewer.py`: kolorowanie alertów wg score,
+  - `ui/main_window.py`: pasek narzędzi, licznik pakietów, batch update tabeli, limit 5000 wierszy, monitor CPU/RAM,
+  - `core/utils.py`: geolokalizacja IP, hexdump/ASCII, lista interfejsów z kategoryzacją (Wi‑Fi/Ethernet/...)
+  - `ui/config_dialog.py`: wybór aktywnych interfejsów, opcja pokazania nieaktywnych, ikony/kolory typów,
+  - Zapamiętywanie ostatnio wybranego interfejsu (`QSettings`).
+
 
 ---
 
 ## TODO
 
-- [ ] Rozwinąć szkielet plików `core/` i `ui/`
-- [ ] Rozpisać kolejne etapy rozwoju projektu
-- [ ] Doprecyzować wymagania AI
-- [ ] Opracować prototyp GUI
+- [x] Rozwinąć szkielet plików `core/` i `ui/`
+- [ ] Rozszerzyć `AIEngine` o model ML (np. IsolationForest) i trening inkrementalny
+- [ ] Dodać zapisywanie i ładowanie konfiguracji użytkownika
+- [ ] Dodać eksport/import logów pakietów i alertów
+- [ ] Testy jednostkowe dla utils/ai/rules
+- [ ] Ikony w zasobach i spójny theme (jasny/ciemny)
+- [ ] Skróty klawiaturowe (Start/Stop/Focus filter)

@@ -2,3 +2,5 @@ PyQt5
 scapy
 numpy
 scikit-learn
+requests
+psutil
