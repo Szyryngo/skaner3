@@ -1,0 +1,1 @@
+# Reguły wykrywania i automatyczne reakcje
