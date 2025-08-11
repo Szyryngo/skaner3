@@ -121,11 +121,21 @@ class ConfigDialog(QDialog):
         export_form = QFormLayout(export_group)
         self.combo_export_format = QComboBox(export_group)
         self.combo_export_format.addItems(["CSV", "TXT"])
+        # Osobne formaty
+        self.combo_export_format_packets = QComboBox(export_group)
+        self.combo_export_format_packets.addItems(["CSV", "TXT"])
+        self.combo_export_format_alerts = QComboBox(export_group)
+        self.combo_export_format_alerts.addItems(["CSV", "TXT"])
         self.spin_export_rotate = QSpinBox(export_group)
         self.spin_export_rotate.setRange(1000, 1000000)
         self.spin_export_rotate.setSingleStep(1000)
         self.spin_export_rotate.setValue(100000)
         self.checkbox_export_auto = QCheckBox("Automatyczny zapis pakietów i alertów", export_group)
+        # Auto-cleanup
+        self.spin_export_cleanup_days = QSpinBox(export_group)
+        self.spin_export_cleanup_days.setRange(0, 3650)
+        self.spin_export_cleanup_days.setSingleStep(1)
+        self.spin_export_cleanup_days.setValue(0)
         # Katalog docelowy
         self.input_export_dir = QLineEdit(export_group)
         self.input_export_dir.setReadOnly(True)
@@ -138,9 +148,12 @@ class ConfigDialog(QDialog):
         dir_layout = QHBoxLayout()
         dir_layout.addWidget(self.input_export_dir)
         dir_layout.addWidget(btn_pick_dir)
-        export_form.addRow("Format:", self.combo_export_format)
+        export_form.addRow("Format (globalny):", self.combo_export_format)
+        export_form.addRow("Format pakietów:", self.combo_export_format_packets)
+        export_form.addRow("Format alertów:", self.combo_export_format_alerts)
         export_form.addRow("Rotacja co (wiersze):", self.spin_export_rotate)
         export_form.addRow(self.checkbox_export_auto)
+        export_form.addRow("Auto-czyszczenie (dni):", self.spin_export_cleanup_days)
         export_form.addRow("Katalog docelowy:", dir_layout)
 
         form = QFormLayout()
@@ -197,8 +210,11 @@ class ConfigDialog(QDialog):
         }
         export_cfg = {
             "format": self.combo_export_format.currentText().lower(),
+            "format_packets": self.combo_export_format_packets.currentText().lower(),
+            "format_alerts": self.combo_export_format_alerts.currentText().lower(),
             "rotate_rows": int(self.spin_export_rotate.value()),
             "auto": bool(self.checkbox_export_auto.isChecked()),
             "dir": self.input_export_dir.text().strip() or "",
+            "cleanup_days": int(self.spin_export_cleanup_days.value()),
         }
         return interface, bpf_filter, simulation, ai_cfg, export_cfg

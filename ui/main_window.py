@@ -23,6 +23,7 @@ import json
 import psutil
 
 from core.ai_engine import AIEngine
+from core import APP_NAME, __version__
 from core.packet_sniffer import PacketSniffer
 from core.rules import RuleEngine
 from core.utils import packetinfo_to_row, PacketInfo, LogWriter
@@ -35,7 +36,7 @@ from .packet_viewer import PacketViewer
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("AI Network Sniffer")
+        self.setWindowTitle(f"{APP_NAME} v{__version__}")
         self.resize(1000, 600)
 
         # Model/engine
@@ -125,6 +126,7 @@ class MainWindow(QMainWindow):
             "rotate_rows": int(settings.value("export/rotate_rows", 100000)),
             "auto": bool(settings.value("export/auto", False)),
             "dir": str(settings.value("export/dir", "")),
+            "cleanup_days": int(settings.value("export/cleanup_days", 0)),
         }
 
         # Bufor indeksowany od najstarszego
@@ -318,6 +320,7 @@ class MainWindow(QMainWindow):
             settings.setValue("ai/alerts_only_anomalies", self.cfg_ai.get("alerts_only_anomalies", False))
             settings.setValue("export/auto", self.cfg_export.get("auto", False))
             settings.setValue("export/dir", self.cfg_export.get("dir", ""))
+            settings.setValue("export/cleanup_days", self.cfg_export.get("cleanup_days", 0))
             self._recreate_ai()
             self._set_status("Config updated")
 
