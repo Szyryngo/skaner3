@@ -1,71 +1,145 @@
-# AI Network Sniffer (Python + Qt5)
+# AI Network Sniffer v0.3.0
 
-Nowoczesny sniffer sieciowy z aktywną AI do monitorowania i ochrony sieci.
+Inteligentny sniffer sieciowy z AI do wykrywania anomalii i zagrożeń bezpieczeństwa.
 
-## Główne funkcje
-- Przechwytywanie i analiza pakietów sieciowych w czasie rzeczywistym
-- Wykrywanie zagrożeń i anomalii z użyciem AI/ML
-- Intuicyjny interfejs GUI (Qt5)
-- Automatyczne reakcje na wykryte zagrożenia
-- Rozwijana architektura modułowa
+## 🚀 Funkcje
 
-## Co nowego (MVP+)
-- Widok pakietów z filtrami (tekst/PROTOCOL), menu kontekstowym i szczegółami (hexdump, ASCII, geolokalizacja IP)
-- Pasek narzędzi z szybkim dostępem (Start/Stop/Konfiguracja), skróty: F5, Shift+F5, Ctrl+,
-- Monitor zasobów w prawym górnym rogu (CPU i RAM)
-- Wydajność: batch update tabeli i limit 5000 wierszy (niższe obciążenie CPU/RAM)
-- Konfiguracja interfejsu: lista aktywnych interfejsów z czytelnymi etykietami (Wi‑Fi/Ethernet/Loopback/Virtual/Cellular), opcja pokazania nieaktywnych; zapamiętywanie ostatniego wyboru
-- AI: heurystyka + modele ML: IsolationForest (sklearn) oraz Half‑Space Trees (river, strumieniowo). Karta „AI” pokazuje status (ostatni score, reasons, decyzje, metryki stream)
-- Próg i alerty: regulowany próg `combined_threshold`; przełącznik „tylko anomalie do alertów” (można wyciszyć alerty reguł)
-- Eksport i logowanie: ręczny eksport (CSV/TXT) z menu oraz automatyczne logowanie pakietów i alertów z rotacją (konfigurowalne)
+### Podstawowe
+- **Przechwytywanie pakietów** w czasie rzeczywistym (Scapy) lub symulacja
+- **Indeksowanie pakietów** od najstarszego do najnowszego
+- **Szczegółowy widok pakietów** z hex dump, ASCII i geolokalizacją IP
+- **Filtrowanie i wyszukiwanie** pakietów po protokole, IP, porcie
 
-## Jak uruchomić
-1. Zainstaluj wymagane pakiety:
-    ```
-    pip install -r requirements.txt
-    ```
-2. Uruchom aplikację:
-    ```
-    python main.py
-    ```
+### AI/ML
+- **Wykrywanie anomalii** heurystyczne + ML (IsolationForest + Half-Space Trees)
+- **Konfigurowalne progi** dla różnych modeli
+- **Status AI w czasie rzeczywistym** z parametrami i metrykami
+- **Przełącznik "tylko anomalie do alertów"**
 
-Domyślnie aplikacja startuje w trybie symulacji (bez scapy). Aby przechwytywać realny ruch:
-- Zainstaluj Npcap/WinPcap i uruchom Python z uprawnieniami administratora (Windows),
-- W menu Plik → Konfiguracja… odznacz „Tryb symulacji”, ustaw interfejs i ewentualny filtr BPF.
+### Eksport i logowanie
+- **Osobne formaty** dla pakietów i alertów (CSV/TXT)
+- **Wybór katalogu docelowego** dla logów i eksportów
+- **Auto-rotacja plików** po określonej liczbie wierszy
+- **Auto-czyszczenie starych plików** po X dniach
+- **Eksport konfiguracji** do/z JSON z UI state
 
-W prawym górnym rogu paska narzędzi widoczny jest wskaźnik CPU i RAM (`psutil`).
+### UI/UX
+- **Czytelne interfejsy sieciowe** (Wi-Fi, Ethernet, Loopback, Virtual)
+- **Ikony i kolory** dla typów interfejsów
+- **Monitor CPU/RAM** w czasie rzeczywistym
+- **Skróty klawiaturowe** (F5, Shift+F5, Ctrl+,)
+- **Persystentne ustawienia** UI i konfiguracji
+- **Przycisk "Reset do domyślnych"**
 
-## Struktura katalogów
-- `core/` — logika sniffera, AI, reguły
-- `ui/` — komponenty GUI
-- `main.py` — punkt startowy aplikacji
-- `SESSION_NOTES.md` — notatki projektowe i struktura katalogów
+## 📋 Wymagania
 
-## Dokumentacja
-Szczegółowe założenia i postępy znajdziesz w pliku `SESSION_NOTES.md`.
+- Python 3.8+
+- PyQt5
+- Scapy (opcjonalnie)
+- NumPy
+- scikit-learn (opcjonalnie)
+- River (opcjonalnie)
+- psutil
+- requests
 
-## MVP (obecny stan)
-- Okno główne z zakładkami „Pakiety” i „Alerty”,
-- Kolejka pakietów zasilana przez `PacketSniffer` (scapy lub tryb symulacji),
-- Prosty `AIEngine` z heurystyką oraz `RuleEngine` z regułami (np. porty zablokowane, duże pakiety).
-  - Indeksowanie pakietów od najstarszych do najnowszych; wybór wiersza pokazuje hexdump, ASCII oraz geolokalizację IP.
-  - Konfiguracja interfejsu: lista aktywnych interfejsów z czytelnymi etykietami (Wi‑Fi/Ethernet/Loopback/Virtual/Cellular), z opcją pokazania nieaktywnych. Ikony/kolory typów, zapamiętywanie ostatniego interfejsu.
-  - Karta „AI” z podglądem działania (status ML, ostatnie powody/anomalia), konfiguracja ML w oknie ustawień (włącz/wyłącz, contamination, refit interval).
-  - Eksport pakietów (CSV) i alertów (TXT) z menu Plik.
+## 🚀 Jak uruchomić
 
-## Znane ograniczenia
-- Zatrzymywanie sniffera scapy wymaga `AsyncSniffer` i uprawnień, w środowiskach bez scapy aplikacja automatycznie przełącza się na symulację,
-- Heurystyka AI to placeholder – do wymiany na model ML.
-  - Geolokalizacja korzysta z `ip-api.com` i wymaga dostępu do internetu; brak gwarancji dokładności.
-  - Lista interfejsów i monitor CPU/RAM wymagają `psutil`.
-  - Modele ML: `scikit-learn` dla IsolationForest i `river` dla Half‑Space Trees; w razie braku bibliotek używana jest sama heurystyka.
+```bash
+# Instalacja zależności
+pip install -r requirements.txt
 
-## Konfiguracja (skrót)
-- Plik → Konfiguracja…: wybór interfejsu (aktywny domyślnie), tryb symulacji, filtr BPF
-- Sekcja AI: włącz/wyłącz IsolationForest; próg `combined_threshold`; model strumieniowy i próg Z
-- Sekcja Alerty: „tylko anomalie” (wycisza alerty reguł)
-- Sekcja Eksport: format CSV/TXT, rotacja co N wierszy, automatyczny zapis podczas przechwytywania
+# Uruchomienie
+python main.py
+```
 
-## Konfiguracja użytkownika
-- Zapis/Wczytanie: Plik → „Zapisz konfigurację…” / „Wczytaj konfigurację…” (format JSON)
-- Stan UI jest zachowywany (układ splitterów, aktywna zakładka, geometria okna)
+## ⚙️ Konfiguracja
+
+### Eksport
+- **Format globalny**: domyślny format dla wszystkich plików
+- **Format pakietów**: osobny format dla logów pakietów
+- **Format alertów**: osobny format dla logów alertów
+- **Auto-rotacja**: liczba wierszy przed rotacją pliku
+- **Auto-czyszczenie**: usuwanie plików starszych niż X dni
+- **Katalog docelowy**: wybór ścieżki dla logów i eksportów
+
+### AI/ML
+- **ML włączony**: włącza/wyłącza modele ML
+- **Contamination**: próg anomalii dla IsolationForest
+- **Refit interval**: co ile próbek trenować model
+- **Stream model**: włącza model strumieniowy (River HST)
+- **Z-threshold**: próg dla modelu strumieniowego
+- **Combined threshold**: próg łączony dla wszystkich modeli
+
+## 🔧 Struktura projektu
+
+```
+skaner3/
+├── core/                 # Logika biznesowa
+│   ├── ai_engine.py     # Silnik AI/ML
+│   ├── packet_sniffer.py # Przechwytywanie pakietów
+│   ├── rules.py         # Reguły bezpieczeństwa
+│   └── utils.py         # Narzędzia pomocnicze
+├── ui/                   # Interfejs użytkownika
+│   ├── main_window.py   # Główne okno aplikacji
+│   ├── packet_viewer.py # Widok pakietów
+│   ├── alert_viewer.py  # Widok alertów
+│   ├── config_dialog.py # Dialog konfiguracji
+│   └── ai_status_viewer.py # Status AI
+├── tests/                # Testy jednostkowe
+├── main.py              # Punkt wejścia
+└── requirements.txt     # Zależności
+```
+
+## 🧪 Testy
+
+```bash
+# Uruchomienie testów
+pytest tests/
+
+# Testy z pokryciem
+pytest --cov=core tests/
+```
+
+## 📝 Historia zmian
+
+### v0.3.0
+- ✅ Osobne formaty eksportu dla pakietów i alertów
+- ✅ Wybór katalogu docelowego dla auto-logowania
+- ✅ Auto-czyszczenie starych plików po X dniach
+- ✅ Przycisk "Reset do domyślnych" w konfiguracji
+- ✅ Tytuł okna z wersją programu
+- ✅ Naprawione błędy spójności konfiguracji
+
+### v0.2.0
+- ✅ Model ML strumieniowy (River Half-Space Trees)
+- ✅ Konfigurowalny próg `combined_score`
+- ✅ Przełącznik "tylko anomalie do alertów"
+- ✅ Automatyczne logowanie z rotacją
+- ✅ Testy jednostkowe dla AIEngine i utils
+- ✅ GitHub Actions CI/CD
+
+### v0.1.0
+- ✅ MVP z podstawowym przechwytywaniem pakietów
+- ✅ Indeksowanie i szczegółowy widok pakietów
+- ✅ AI Engine z IsolationForest
+- ✅ UI z filtrami i metrykami systemowymi
+- ✅ Czytelne interfejsy sieciowe
+- ✅ Eksport konfiguracji i UI state
+
+## 🐛 Znane ograniczenia
+
+- Scapy wymaga uprawnień administratora na niektórych systemach
+- Model ML może wymagać dużej ilości pamięci przy dużych buforach
+- Geolokalizacja IP może być ograniczona przez API
+
+## 🤝 Wkład
+
+1. Fork projektu
+2. Utwórz branch (`git checkout -b feature/amazing-feature`)
+3. Commit zmiany (`git commit -m 'Add amazing feature'`)
+4. Push do branch (`git push origin feature/amazing-feature`)
+5. Otwórz Pull Request
+
+## 📄 Licencja
+
+MIT License - zobacz [LICENSE](LICENSE) dla szczegółów.

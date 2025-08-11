@@ -123,6 +123,8 @@ class MainWindow(QMainWindow):
         }
         self.cfg_export: dict = {
             "format": str(settings.value("export/format", "csv")),
+            "format_packets": str(settings.value("export/format_packets", "")),
+            "format_alerts": str(settings.value("export/format_alerts", "")),
             "rotate_rows": int(settings.value("export/rotate_rows", 100000)),
             "auto": bool(settings.value("export/auto", False)),
             "dir": str(settings.value("export/dir", "")),
@@ -313,6 +315,8 @@ class MainWindow(QMainWindow):
             settings.setValue("ai/contamination", self.cfg_ai.get("ml_contamination", 0.02))
             settings.setValue("ai/refit_interval", self.cfg_ai.get("ml_refit_interval", 500))
             settings.setValue("export/format", self.cfg_export.get("format", "csv"))
+            settings.setValue("export/format_packets", self.cfg_export.get("format_packets", ""))
+            settings.setValue("export/format_alerts", self.cfg_export.get("format_alerts", ""))
             settings.setValue("export/rotate_rows", self.cfg_export.get("rotate_rows", 100000))
             settings.setValue("ai/stream_enabled", self.cfg_ai.get("ml_stream_enabled", True))
             settings.setValue("ai/stream_z", self.cfg_ai.get("stream_z_threshold", 2.5))
@@ -409,15 +413,11 @@ class MainWindow(QMainWindow):
                 writer = csv.writer(f)
                 writer.writerow(headers)
                 for p in self._packets_buffer:
-                    row = [
-                        row_value
-                        for row_value in [
-                            *([row := packetinfo_to_row(p)] and [
-                                row["time"], row["src_ip"], row["dst_ip"], row["src_port"], row["dst_port"], row["protocol"], row["length"]
-                            ])
-                        ]
-                    ]
-                    writer.writerow(row)
+                    row = packetinfo_to_row(p)
+                    writer.writerow([
+                        row["time"], row["src_ip"], row["dst_ip"], 
+                        row["src_port"], row["dst_port"], row["protocol"], row["length"]
+                    ])
         except Exception:
             pass
 
@@ -495,8 +495,12 @@ class MainWindow(QMainWindow):
             # Export
             for key, qkey in [
                 ("format", "export/format"),
+                ("format_packets", "export/format_packets"),
+                ("format_alerts", "export/format_alerts"),
                 ("rotate_rows", "export/rotate_rows"),
                 ("auto", "export/auto"),
+                ("dir", "export/dir"),
+                ("cleanup_days", "export/cleanup_days"),
             ]:
                 if key in exp:
                     settings.setValue(qkey, exp[key])
@@ -540,7 +544,13 @@ class MainWindow(QMainWindow):
         if not self.cfg_export.get("auto", False):
             self._teardown_loggers()
             return
-        is_csv = (self.cfg_export.get("format", "csv") == "csv")
+        
+        # Wybór formatów
+        fmt_global = self.cfg_export.get("format", "csv")
+        fmt_packets = (self.cfg_export.get("format_packets") or fmt_global)
+        fmt_alerts = (self.cfg_export.get("format_alerts") or fmt_global)
+        is_csv_packets = (fmt_packets == "csv")
+        is_csv_alerts = (fmt_alerts == "csv")
         rotate = int(self.cfg_export.get("rotate_rows", 100000))
         base_dir = self.cfg_export.get("dir", "").strip() or "."
         import os
@@ -549,11 +559,19 @@ class MainWindow(QMainWindow):
         except Exception:
             base_dir = "."
         try:
-            self._packet_logger = LogWriter(os.path.join(base_dir, "packets_log.csv" if is_csv else "packets_log.txt"), is_csv=is_csv, max_rows_per_file=rotate, headers=["time","src_ip","dst_ip","src_port","dst_port","protocol","length"])
-            self._alert_logger = LogWriter(os.path.join(base_dir, "alerts_log.csv" if is_csv else "alerts_log.txt"), is_csv=is_csv, max_rows_per_file=rotate, headers=["type","score","time","src_ip","dst_ip","protocol","length"])
+            self._packet_logger = LogWriter(os.path.join(base_dir, f"packets_log.{ 'csv' if is_csv_packets else 'txt'}"), is_csv=is_csv_packets, max_rows_per_file=rotate, headers=["time","src_ip","dst_ip","src_port","dst_port","protocol","length"])
+            self._alert_logger = LogWriter(os.path.join(base_dir, f"alerts_log.{ 'csv' if is_csv_alerts else 'txt'}"), is_csv=is_csv_alerts, max_rows_per_file=rotate, headers=["type","score","time","src_ip","dst_ip","protocol","length"])
         except Exception:
             self._packet_logger = None
             self._alert_logger = None
+        
+        # Auto-cleanup
+        try:
+            days = int(self.cfg_export.get("cleanup_days", 0))
+            if days > 0:
+                self._cleanup_old_logs(base_dir, days)
+        except Exception:
+            pass
 
     def _teardown_loggers(self) -> None:
         try:
@@ -582,3 +600,15 @@ class MainWindow(QMainWindow):
             self._alert_logger.write_row(row)
         except Exception:
             pass
+
+    def _cleanup_old_logs(self, base_dir: str, days: int) -> None:
+        import os, time
+        cutoff = time.time() - days * 86400
+        for name in os.listdir(base_dir):
+            if name.startswith("packets_log.") or name.startswith("alerts_log."):
+                path = os.path.join(base_dir, name)
+                try:
+                    if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
+                        os.remove(path)
+                except Exception:
+                    continue

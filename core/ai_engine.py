@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+from collections import deque
 
 import numpy as np
 
@@ -126,6 +127,7 @@ class AIEngine:
         # ML batch (IsolationForest)
         ml_score = None
         is_ml_anomaly = False
+        decision = None  # Inicjalizacja zmiennej
         if self.ml_enabled:
             feat = self._packet_to_features(packet)
             self._buffer.append(feat)
@@ -183,7 +185,7 @@ class AIEngine:
         self._last_reasons = reasons
         self._last_combined_score = float(combined_score if combined_score is not None else heuristic_score)
         try:
-            self._last_ml_decision = float(decision)  # type: ignore[name-defined]
+            self._last_ml_decision = float(decision) if decision is not None else None
         except Exception:
             self._last_ml_decision = None
         self._last_stream_score = stream_score
@@ -193,6 +195,7 @@ class AIEngine:
             "is_anomaly": bool(is_anomaly),
             "score": round(float(combined_score if combined_score is not None else heuristic_score), 3),
             "reasons": reasons,
+            "combined_score": round(float(combined_score if combined_score is not None else heuristic_score), 3),
         }
 
     def get_status(self) -> Dict[str, object]:

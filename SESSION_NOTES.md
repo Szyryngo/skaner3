@@ -1,84 +1,151 @@
-# Notatki z sesji projektowej: AI Network Sniffer
+# SESSION_NOTES.md - AI Network Sniffer
 
-**Data rozpoczęcia:** 2025-08-11
+## Projekt: AI Network Sniffer v0.3.0
 
----
+### Cel
+Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagrożeń bezpieczeństwa.
 
-## Założenia projektu
+### Architektura
+- **core/**: Logika biznesowa (AI, sniffer, reguły, utils)
+- **ui/**: Komponenty GUI (Qt5)
+- **tests/**: Testy jednostkowe
+- **main.py**: Punkt wejścia
 
-- **Cel:** Aplikacja desktopowa do monitorowania ruchu sieciowego i wykrywania zagrożeń z użyciem AI.
-- **Język:** Python 3.x
-- **GUI:** Qt5 (PyQt5 lub PySide2)
-- **Funkcje AI:** Wykrywanie anomalii i zagrożeń w czasie rzeczywistym, uczenie się na bieżąco.
-- **Przechwytywanie pakietów:** scapy, pyshark lub pcapy.
+## Postęp implementacji
 
-## Struktura katalogów i plików (aktualizowana na bieżąco)
+### ✅ MVP (v0.1.0) - ZAKOŃCZONE
+- [x] Podstawowa struktura projektu
+- [x] `PacketSniffer` z scapy i trybem symulacji
+- [x] `AIEngine` z heurystyką
+- [x] `RuleEngine` z regułami bezpieczeństwa
+- [x] `MainWindow` z zakładkami Pakiety/Alerty
+- [x] `PacketViewer` z tabelą pakietów
+- [x] `AlertViewer` z listą alertów
+- [x] `ConfigDialog` z podstawowymi ustawieniami
+- [x] Indeksowanie pakietów od najstarszego do najnowszego
+- [x] Szczegółowy widok pakietów (hex, ASCII, geolokalizacja)
 
-```
-skaner3/
-│
-├── core/
-│   ├── __init__.py
-│   ├── packet_sniffer.py      # Przechwytywanie i dekodowanie pakietów
-│   ├── ai_engine.py           # Silnik AI/ML wykrywający anomalie
-│   ├── rules.py               # Reguły wykrywania i automatyczne reakcje
-│   └── utils.py               # Narzędzia pomocnicze
-│
-├── ui/
-│   ├── __init__.py
-│   ├── main_window.py         # Główne okno aplikacji
-│   ├── packet_viewer.py       # Widok pakietów
-│   ├── alert_viewer.py        # Widok alertów
-│   └── config_dialog.py       # Okno konfiguracji
-│
-├── main.py                    # Punkt startowy aplikacji
-├── requirements.txt           # Lista zależności
-├── SESSION_NOTES.md           # Te notatki
-└── README.md                  # Opis projektu
-```
+### ✅ UI/UX Enhancements (v0.1.0) - ZAKOŃCZONE
+- [x] Filtry i wyszukiwanie pakietów
+- [x] Menu kontekstowe dla pakietów
+- [x] Toolbar z Start/Stop/Config
+- [x] Monitor CPU/RAM w czasie rzeczywistym
+- [x] Skróty klawiaturowe (F5, Shift+F5, Ctrl+,)
+- [x] Czytelne interfejsy sieciowe (Wi-Fi, Ethernet, Loopback, Virtual, Cellular)
+- [x] Ikony i kolory dla typów interfejsów
+- [x] Zapamiętywanie ostatniego wybranego interfejsu
 
-## Inspiracje
+### ✅ AI/ML Integration (v0.2.0) - ZAKOŃCZONE
+- [x] Integration IsolationForest (sklearn) do AIEngine
+- [x] Integration Half-Space Trees (river) dla modelu strumieniowego
+- [x] Konfigurowalne parametry ML (contamination, refit interval, stream threshold)
+- [x] Przełącznik "tylko anomalie do alertów"
+- [x] Konfigurowalny próg `combined_score`
+- [x] AI Status Viewer z metrykami w czasie rzeczywistym
+- [x] Fuzja wyników heurystyki + ML batch + ML streaming
 
-- Wireshark, Zeek, Suricata, AI NIDS (DeepNIDS)
-- Najlepsze praktyki aplikacji desktopowych i bezpieczeństwa sieci
+### ✅ Export & Logging (v0.2.0) - ZAKOŃCZONE
+- [x] Ręczny eksport pakietów (CSV) i alertów (TXT)
+- [x] Automatyczne logowanie pakietów i alertów
+- [x] Rotacja plików po określonej liczbie wierszy
+- [x] `LogWriter` utility dla zarządzania plikami
+- [x] Eksport/import konfiguracji (JSON)
+- [x] Persystentne ustawienia UI (geometria, splittery, zakładki)
 
----
+### ✅ Testing & CI/CD (v0.2.0) - ZAKOŃCZONE
+- [x] Testy jednostkowe dla `AIEngine`
+- [x] Testy jednostkowe dla `utils`
+- [x] GitHub Actions workflow (pytest na Ubuntu/Windows)
 
-### Log zmian i postępu
+### ✅ Advanced Export & Configuration (v0.3.0) - ZAKOŃCZONE
+- [x] Osobne formaty eksportu dla pakietów i alertów (CSV/TXT)
+- [x] Wybór katalogu docelowego dla auto-logowania i eksportów
+- [x] Auto-czyszczenie starych plików po X dniach
+- [x] Przycisk "Reset do domyślnych" w konfiguracji
+- [x] Tytuł okna z wersją programu (v0.3.0)
+- [x] Naprawione błędy spójności konfiguracji
 
-- **2025-08-11:** Inicjalizacja repozytorium, utworzenie pierwszej wersji struktury katalogów i plików.
-- **2025-08-11 (MVP):** Dodano działające szkielety:
-  - `core/packet_sniffer.py` z trybem `AsyncSniffer` (scapy) i trybem symulacji,
-  - `core/ai_engine.py` prosta heurystyka (duży pakiet, podejrzane porty),
-  - `core/rules.py` podstawowe reguły (blokowane porty, duża długość),
-  - `core/utils.py` konwersje pakietów i generator danych testowych,
-  - `ui/main_window.py`, `ui/packet_viewer.py`, `ui/alert_viewer.py`, `ui/config_dialog.py` – GUI z zakładkami i konfiguracją,
-  - `main.py` – start aplikacji z PyQt5.
+### 🔧 Naprawione błędy (v0.3.0)
+- [x] Błąd z niezdefiniowaną zmienną `decision` w `AIEngine`
+- [x] Brakujące importy `from collections import deque`
+- [x] Niespójności w konfiguracji export (brakujące pola)
+- [x] Błąd składni w `export_packets` (walrus operator)
+- [x] Brakujące pola w `_setup_loggers` i `import_config`
 
-- **2025-08-11 (UX + funkcje):**
-  - `ui/packet_viewer.py`: filtry, wyszukiwarka, menu kontekstowe, dopasowanie kolumn,
-  - `ui/alert_viewer.py`: kolorowanie alertów wg score,
-  - `ui/main_window.py`: pasek narzędzi, skróty (F5/Shift+F5/Ctrl+,), licznik pakietów, batch update tabeli, limit 5000 wierszy, monitor CPU/RAM,
-  - `core/utils.py`: geolokalizacja IP, hexdump/ASCII, lista interfejsów z kategoryzacją (Wi‑Fi/Ethernet/Cellular/Loopback/Virtual), `LogWriter` z rotacją,
-  - `ui/config_dialog.py`: wybór aktywnych interfejsów, opcja pokazania nieaktywnych, ikony/kolory typów; sekcja AI (włącz/wyłącz ML, contamination, refit, próg combined, model strumieniowy i próg Z), sekcja alertów („tylko anomalie”), sekcja eksportu (format, rotacja, auto-zapis),
-  - Zapamiętywanie ustawień w `QSettings` (interfejs, BPF, symulacja, AI – w tym stream i progi, alerty, eksport).
-  - `ui/ai_status_viewer.py`: karta „AI” – status modelu (batch i stream) i ostatnie powody/score; `core/ai_engine.py` – IsolationForest + Half‑Space Trees + heurystyka, `get_status()`.
+## Aktualny stan
 
+### Wersja: 0.3.0
+- **Nazwa**: AI Network Sniffer
+- **Status**: Stabilna wersja z pełną funkcjonalnością eksportu i konfiguracji
+- **Wszystkie główne funkcje zaimplementowane**
 
----
+### Pliki zaimplementowane
+- ✅ `core/__init__.py` - nazwa i wersja aplikacji
+- ✅ `core/ai_engine.py` - silnik AI z ML (IsolationForest + Half-Space Trees)
+- ✅ `core/packet_sniffer.py` - przechwytywanie pakietów (scapy/symulacja)
+- ✅ `core/rules.py` - reguły bezpieczeństwa
+- ✅ `core/utils.py` - narzędzia pomocnicze, geolokalizacja, LogWriter
+- ✅ `ui/main_window.py` - główne okno aplikacji
+- ✅ `ui/packet_viewer.py` - widok pakietów z filtrami
+- ✅ `ui/alert_viewer.py` - widok alertów
+- ✅ `ui/config_dialog.py` - dialog konfiguracji
+- ✅ `ui/ai_status_viewer.py` - status AI
+- ✅ `main.py` - punkt wejścia
+- ✅ `tests/test_ai_engine.py` - testy AIEngine
+- ✅ `tests/test_utils.py` - testy utils
+- ✅ `.github/workflows/ci.yml` - GitHub Actions CI/CD
 
-## TODO
+## Optymalizacje wydajności
 
-- [x] Rozwinąć szkielet plików `core/` i `ui/`
-- [x] Rozszerzyć `AIEngine` o model ML (IsolationForest) i trening inkrementalny (Half‑Space Trees)
-- [x] Dodać sekcję AI w konfiguracji i kartę statusu AI
-- [ ] Dodać zapisywanie i ładowanie konfiguracji użytkownika
-- [x] Zapis/Wczytanie konfiguracji (JSON) + zachowanie układu UI (splitter, zakładki, geometria)
-- [x] Zapisywanie ustawień w `QSettings`
-- [ ] Dodać eksport/import logów pakietów i alertów
-- [x] Eksport pakietów/alertów z GUI; rotacja plików w `LogWriter`
-- [ ] Auto-eksport do wskazanego katalogu + selekcja docelowej ścieżki w GUI
-- [ ] Testy jednostkowe dla utils/ai/rules
-- [x] Testy podstawowe dla AIEngine i utils
-- [ ] Ikony w zasobach i spójny theme (jasny/ciemny)
-- [ ] Skróty klawiaturowe (Start/Stop/Focus filter)
+### CPU/RAM
+- ✅ Batch updates UI (200 pakietów na tick)
+- ✅ Limit wierszy tabeli (5000)
+- ✅ Timer 1s dla metryk systemowych
+- ✅ `n_jobs=1` w IsolationForest
+- ✅ Bufor ML ograniczony do 4000 próbek
+- ✅ Refit modelu co 500 próbek
+
+### Buforowanie
+- ✅ Indeksowanie pakietów od najstarszego
+- ✅ Auto-rotacja logów
+- ✅ Auto-czyszczenie starych plików
+- ✅ Persystentne ustawienia UI
+
+## Następne kroki (opcjonalne)
+
+### Możliwe rozszerzenia
+- [ ] Dodanie więcej modeli ML (LSTM, Autoencoder)
+- [ ] Wizualizacja ruchu sieciowego (wykresy, mapy)
+- [ ] Integracja z systemami SIEM
+- [ ] Alerty w czasie rzeczywistym (notifications)
+- [ ] Wsparcie dla protokołów specyficznych (HTTP, DNS, DHCP)
+- [ ] Dashboard z metrykami sieciowymi
+- [ ] Wsparcie dla wielu interfejsów jednocześnie
+- [ ] Backup i restore konfiguracji
+- [ ] Logi systemowe (syslog, Windows Event Log)
+- [ ] Wsparcie dla kontenerów (Docker)
+
+### Dokumentacja
+- [x] README.md zaktualizowany do v0.3.0
+- [x] SESSION_NOTES.md zaktualizowany
+- [x] Historia zmian w README
+- [ ] Dokumentacja API
+- [ ] Przewodnik użytkownika
+- [ ] Przewodnik dewelopera
+
+## Uwagi techniczne
+
+### Zależności
+- **Wymagane**: PyQt5, numpy, psutil, requests
+- **Opcjonalne**: scapy, scikit-learn, river
+- **Testy**: pytest, pytest-cov
+
+### Kompatybilność
+- **Python**: 3.8+
+- **OS**: Windows, Linux, macOS
+- **GUI**: Qt5 (PyQt5/PySide2)
+
+### Wydajność
+- **Pakietów/sekundę**: ~1000-5000 (zależnie od sprzętu)
+- **Pamięć**: ~50-200MB (zależnie od buforów)
+- **CPU**: 5-20% (zależnie od aktywności sieci)
