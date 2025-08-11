@@ -60,9 +60,9 @@ skaner3/
   - `ui/alert_viewer.py`: kolorowanie alertów wg score,
   - `ui/main_window.py`: pasek narzędzi, skróty (F5/Shift+F5/Ctrl+,), licznik pakietów, batch update tabeli, limit 5000 wierszy, monitor CPU/RAM,
   - `core/utils.py`: geolokalizacja IP, hexdump/ASCII, lista interfejsów z kategoryzacją (Wi‑Fi/Ethernet/Cellular/Loopback/Virtual), `LogWriter` z rotacją,
-  - `ui/config_dialog.py`: wybór aktywnych interfejsów, opcja pokazania nieaktywnych, ikony/kolory typów; sekcja AI (włącz/wyłącz ML, contamination, refit), sekcja eksportu (format, rotacja),
-  - Zapamiętywanie ustawień w `QSettings` (interfejs, BPF, symulacja, AI, eksport).
-  - `ui/ai_status_viewer.py`: karta „AI” – status modelu i ostatnie powody/score; `core/ai_engine.py` – IsolationForest + heurystyka, `get_status()`.
+  - `ui/config_dialog.py`: wybór aktywnych interfejsów, opcja pokazania nieaktywnych, ikony/kolory typów; sekcja AI (włącz/wyłącz ML, contamination, refit, próg combined, model strumieniowy i próg Z), sekcja alertów („tylko anomalie”), sekcja eksportu (format, rotacja, auto-zapis),
+  - Zapamiętywanie ustawień w `QSettings` (interfejs, BPF, symulacja, AI – w tym stream i progi, alerty, eksport).
+  - `ui/ai_status_viewer.py`: karta „AI” – status modelu (batch i stream) i ostatnie powody/score; `core/ai_engine.py` – IsolationForest + Half‑Space Trees + heurystyka, `get_status()`.
 
 
 ---
@@ -70,12 +70,14 @@ skaner3/
 ## TODO
 
 - [x] Rozwinąć szkielet plików `core/` i `ui/`
-- [ ] Rozszerzyć `AIEngine` o model ML (np. IsolationForest) i trening inkrementalny
+- [x] Rozszerzyć `AIEngine` o model ML (IsolationForest) i trening inkrementalny (Half‑Space Trees)
 - [x] Dodać sekcję AI w konfiguracji i kartę statusu AI
 - [ ] Dodać zapisywanie i ładowanie konfiguracji użytkownika
 - [x] Zapisywanie ustawień w `QSettings`
 - [ ] Dodać eksport/import logów pakietów i alertów
 - [x] Eksport pakietów/alertów z GUI; rotacja plików w `LogWriter`
+- [ ] Auto-eksport do wskazanego katalogu + selekcja docelowej ścieżki w GUI
 - [ ] Testy jednostkowe dla utils/ai/rules
+- [x] Testy podstawowe dla AIEngine i utils
 - [ ] Ikony w zasobach i spójny theme (jasny/ciemny)
 - [ ] Skróty klawiaturowe (Start/Stop/Focus filter)

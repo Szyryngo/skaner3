@@ -15,8 +15,9 @@ Nowoczesny sniffer sieciowy z aktywną AI do monitorowania i ochrony sieci.
 - Monitor zasobów w prawym górnym rogu (CPU i RAM)
 - Wydajność: batch update tabeli i limit 5000 wierszy (niższe obciążenie CPU/RAM)
 - Konfiguracja interfejsu: lista aktywnych interfejsów z czytelnymi etykietami (Wi‑Fi/Ethernet/Loopback/Virtual/Cellular), opcja pokazania nieaktywnych; zapamiętywanie ostatniego wyboru
-- AI: opcjonalny model IsolationForest (sklearn) + heurystyka, karta „AI” ze statusem (ostatni score, reasons, decision) i parametrami
-- Eksport: zapisywanie pakietów do CSV oraz alertów do TXT z poziomu menu
+- AI: heurystyka + modele ML: IsolationForest (sklearn) oraz Half‑Space Trees (river, strumieniowo). Karta „AI” pokazuje status (ostatni score, reasons, decyzje, metryki stream)
+- Próg i alerty: regulowany próg `combined_threshold`; przełącznik „tylko anomalie do alertów” (można wyciszyć alerty reguł)
+- Eksport i logowanie: ręczny eksport (CSV/TXT) z menu oraz automatyczne logowanie pakietów i alertów z rotacją (konfigurowalne)
 
 ## Jak uruchomić
 1. Zainstaluj wymagane pakiety:
@@ -57,4 +58,10 @@ Szczegółowe założenia i postępy znajdziesz w pliku `SESSION_NOTES.md`.
 - Heurystyka AI to placeholder – do wymiany na model ML.
   - Geolokalizacja korzysta z `ip-api.com` i wymaga dostępu do internetu; brak gwarancji dokładności.
   - Lista interfejsów i monitor CPU/RAM wymagają `psutil`.
-  - Model ML wymaga `scikit-learn`; jeśli brak, używana jest jedynie heurystyka.
+  - Modele ML: `scikit-learn` dla IsolationForest i `river` dla Half‑Space Trees; w razie braku bibliotek używana jest sama heurystyka.
+
+## Konfiguracja (skrót)
+- Plik → Konfiguracja…: wybór interfejsu (aktywny domyślnie), tryb symulacji, filtr BPF
+- Sekcja AI: włącz/wyłącz IsolationForest; próg `combined_threshold`; model strumieniowy i próg Z
+- Sekcja Alerty: „tylko anomalie” (wycisza alerty reguł)
+- Sekcja Eksport: format CSV/TXT, rotacja co N wierszy, automatyczny zapis podczas przechwytywania
