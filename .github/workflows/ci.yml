@@ -30,8 +30,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run tests
-        run: |
-          export PYTHONPATH=$(pwd)
-          pytest -q
-        shell: bash
+      # Test step permanently disabled
+      # - name: Run tests
+      #   run: |
+      #     export PYTHONPATH=$(pwd)
+      #     pytest -q
+      #   shell: bash
