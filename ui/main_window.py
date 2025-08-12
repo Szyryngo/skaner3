@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import time
 from queue import Queue, Empty
 from typing import Optional
 
@@ -19,14 +21,23 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
 )
 from PyQt5.QtCore import QSettings
-import json
 import psutil
 
 from core.ai_engine import AIEngine
 from core import APP_NAME, __version__
 from core.packet_sniffer import PacketSniffer
 from core.rules import RuleEngine
-from core.utils import packetinfo_to_row, PacketInfo, LogWriter
+from core.utils import (
+    packetinfo_to_row, 
+    PacketInfo, 
+    LogWriter, 
+    get_cpu_usage, 
+    get_ram_usage, 
+    get_process_cpu_usage, 
+    get_process_ram_usage, 
+    get_disk_io, 
+    get_net_io
+)
 from .ai_status_viewer import AIStatusViewer
 from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
@@ -92,16 +103,25 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.ai_status, "AI")
         self.setCentralWidget(self.tabs)
 
-        # Status bar
+        # Status bar with extended resource monitoring
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
         self._set_status("Idle")
 
-        # Timer do metryk systemowych (CPU/RAM)
-        self.resource_label = QLabel("CPU: --%  RAM: --%", self)
+        # Extended resource monitoring
+        self.resource_label = QLabel(self)
+        self.resource_label.setStyleSheet("font-family: 'Courier New', 'Monaco', monospace;")
+        self.status_bar.addPermanentWidget(self.resource_label)
+        
+        # Tracking for I/O speed calculations
+        self._last_disk_io = get_disk_io()
+        self._last_net_io = get_net_io()
+        self._last_update_time = time.time()
+        
+        # Timer do metryk systemowych (aktualizacja co sekundę)
         self.resource_timer = QTimer(self)
         self.resource_timer.setInterval(1000)
-        self.resource_timer.timeout.connect(self._update_resource_label)
+        self.resource_timer.timeout.connect(self._update_resource_metrics)
         self.resource_timer.start()
 
         # Domyślna konfiguracja
@@ -199,12 +219,6 @@ class MainWindow(QMainWindow):
         toolbar.addAction(action_start)
         toolbar.addAction(action_stop)
         toolbar.addAction(action_config)
-        # Wypychacz (spacer), by kolejne widgety poszły na prawo
-        spacer = QWidget(self)
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        toolbar.addWidget(spacer)
-        # Etykieta z metrykami w prawym górnym rogu
-        toolbar.addWidget(self.resource_label)
         self.addToolBar(toolbar)
 
     def _set_status(self, text: str) -> None:
@@ -214,13 +228,52 @@ class MainWindow(QMainWindow):
         mode = "SIMULATION" if (self.sniffer and self.sniffer.use_simulation) else ("SCAPY" if self.sniffer else "Idle")
         self._set_status(f"{mode} | {self._total_packets} pkt")
 
-    def _update_resource_label(self) -> None:
+    def _update_resource_metrics(self) -> None:
+        """Aktualizuje rozszerzone metryki systemowe w statusie."""
         try:
-            cpu = psutil.cpu_percent(interval=None)
-            ram = psutil.virtual_memory().percent
-            self.resource_label.setText(f"CPU: {cpu:.0f}%  RAM: {ram:.0f}%")
+            # Global system metrics
+            cpu_global = get_cpu_usage()
+            ram_global = get_ram_usage()
+            
+            # Process metrics  
+            cpu_process = get_process_cpu_usage()
+            ram_mb, ram_percent = get_process_ram_usage()
+            
+            # I/O metrics with speed calculation
+            current_time = time.time()
+            current_disk_io = get_disk_io()
+            current_net_io = get_net_io()
+            
+            time_delta = current_time - self._last_update_time
+            
+            # Calculate disk I/O speeds (MB/s)
+            if time_delta > 0:
+                disk_read_speed = (current_disk_io[0] - self._last_disk_io[0]) / time_delta / (1024 * 1024)
+                disk_write_speed = (current_disk_io[1] - self._last_disk_io[1]) / time_delta / (1024 * 1024)
+                net_sent_speed = (current_net_io[0] - self._last_net_io[0]) / time_delta / (1024 * 1024)
+                net_recv_speed = (current_net_io[1] - self._last_net_io[1]) / time_delta / (1024 * 1024)
+            else:
+                disk_read_speed = disk_write_speed = net_sent_speed = net_recv_speed = 0.0
+            
+            # Format the three-line status display
+            line1 = f"CPU: {cpu_global:.1f}% | RAM: {ram_global:.1f}%"
+            line2 = f"Proc: CPU {cpu_process:.1f}% | RAM {ram_mb:.1f}MB ({ram_percent:.1f}%)"
+            line3 = f"Disk: R {disk_read_speed:.1f}MB/s W {disk_write_speed:.1f}MB/s | Net: S {net_sent_speed:.1f}MB/s R {net_recv_speed:.1f}MB/s"
+            
+            status_text = f"{line1}\n{line2}\n{line3}"
+            self.resource_label.setText(status_text)
+            
+            # Update tracking variables
+            self._last_disk_io = current_disk_io
+            self._last_net_io = current_net_io
+            self._last_update_time = current_time
+            
         except Exception:
-            self.resource_label.setText("CPU: n/a  RAM: n/a")
+            # Fallback display
+            fallback = ("CPU: --% | RAM: --%\n"
+                       "Proc: CPU --% | RAM --MB (--%)\n"
+                       "Disk: R --MB/s W --MB/s | Net: S --MB/s R --MB/s")
+            self.resource_label.setText(fallback)
 
     # --- Settings (UI/state) ---
     def _save_ui_settings(self) -> None:
