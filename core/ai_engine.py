@@ -217,3 +217,19 @@ class AIEngine:
             "last_stream_score": self._last_stream_score,
             "last_stream_z": self._last_stream_z,
         }
+
+
+def get_ai_status():
+    """
+    Zwraca status AI oraz kluczowe parametry.
+    Przykład zwracanych danych można dostosować do realnej implementacji.
+    """
+    # Przykładowe dane – zamień na realne źródło statusu w swoim projekcie
+    status = "Działa"
+    aktualny_model = "Model_v1"
+    ilosc_watkow = 4
+    return {
+        "Status AI": status,
+        "Model": aktualny_model,
+        "Wątki AI": ilosc_watkow
+    }

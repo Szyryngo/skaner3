@@ -27,7 +27,7 @@ from core import APP_NAME, __version__
 from core.packet_sniffer import PacketSniffer
 from core.rules import RuleEngine
 from core.utils import packetinfo_to_row, PacketInfo, LogWriter
-from .ai_status_viewer import AIStatusViewer
+from .ai_status_viewer import AiStatusViewer
 from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
 from .packet_viewer import PacketViewer
@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget(self)
         self.packet_viewer = PacketViewer(self)
         self.alert_viewer = AlertViewer(self)
-        self.ai_status = AIStatusViewer(self)
+        self.ai_status_viewer = AiStatusViewer(self)
         
         # Przekaż bufor pakietów do AlertViewer dla podglądu
         self.alert_viewer.set_packets_buffer(self._packets_buffer)
@@ -89,7 +89,7 @@ class MainWindow(QMainWindow):
 
         self.tabs.addTab(tab_packets, "Pakiety")
         self.tabs.addTab(self.alert_viewer, "Alerty")
-        self.tabs.addTab(self.ai_status, "AI")
+        self.tabs.addTab(self.ai_status_viewer, "Status systemu i AI")
         self.setCentralWidget(self.tabs)
 
         # Status bar
@@ -145,6 +145,11 @@ class MainWindow(QMainWindow):
         self.timer.setInterval(100)
         self.timer.timeout.connect(self._drain_queue)
         self.timer.start()
+
+        # Timer do odświeżania danych co 2 sekundy
+        self.status_timer = QTimer(self)
+        self.status_timer.timeout.connect(self.ai_status_viewer.refresh_status)
+        self.status_timer.start(2000)
 
         # Inicjalizacja AI z konfiguracji
         self._recreate_ai()
@@ -382,10 +387,7 @@ class MainWindow(QMainWindow):
                 self._log_alert([alert, "", row["time"], row["src_ip"], row["dst_ip"], row["protocol"], row["length"]])
 
         # Aktualizuj status AI na bieżąco przy anomaliach
-        try:
-            self.ai_status.update_status(self.ai_engine.get_status())
-        except Exception:
-            pass
+        # Status jest teraz odświeżany automatycznie przez timer co 2 sekundy
 
         # Zapis pakietu
         self._log_packet(row)
