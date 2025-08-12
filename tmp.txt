@@ -93,3 +93,18 @@ class MainWindow(QMainWindow):
         self.status_timer.timeout.connect(self.ai_status_viewer.refresh_status)
         self.status_timer.start(2000)
 ```
+
+48. Asystent: Podsumowanie działań związanych z integracją widoku statusu systemu i AI
+
+- Ustalono, że kluczowe elementy (zgodnie z wcześniejszymi uzgodnieniami) zostaną zaimplementowane w osobnej gałęzi w celu zachowania integralności programu.
+- Przygotowano i zapisano do archiwum tmp.txt kody dla plików:
+  - core/system_info.py – funkcja get_system_info() z wykorzystaniem psutil.
+  - core/ai_engine.py – funkcja get_ai_status() zwracająca przykładowy status AI.
+  - ui/ai_status_viewer.py – widget PyQt5 do podglądu statusu systemu i AI.
+  - Modyfikacja ui/main_window.py – zakładka AiStatusViewer z automatycznym odświeżaniem co 2s.
+- Utworzono nową gałąź (feature/ai-status-view) i otwarto pull request z integracją powyższych zmian:
+  - PR: [WIP] Integracja widoku statusu systemu i AI (zgodnie z tmp.txt, krok 47) — https://github.com/Szyryngo/skaner3/pull/7
+- Zmiany są zgodne z krokiem 47 z pliku tmp.txt i bezpieczne dla istniejącej funkcjonalności.
+- Oczekuje się przeglądu i zatwierdzenia PR przed scaleniem do main.
+
+49. UWAGA: Zawsze aktualizuj i sprawdzaj nową strukturę katalogów i plików w tym pliku. Struktury nigdy nie kasuj, a każda sekcja powinna bazować na tej strukturze i ją rozszerzać lub modyfikować. Dzięki temu nigdy nie zapomnisz co robimy i na czym bazujemy w projekcie.
