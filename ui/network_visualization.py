@@ -9,7 +9,8 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QComboBox, QLabel, QPushButton, QTextEdit,
-    QTabWidget, QSpinBox
+    QTabWidget, QSpinBox, QCheckBox, QGroupBox,
+    QScrollArea
 )
 
 import matplotlib.pyplot as plt
@@ -17,6 +18,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 from matplotlib.animation import FuncAnimation
+import seaborn as sns
 
 import numpy as np
 
@@ -35,6 +37,8 @@ class NetworkVisualization(QWidget):
         self._packet_size_history: deque = deque(maxlen=300)
         self._protocol_counts: Dict[str, int] = defaultdict(int)
         self._geo_locations: Dict[str, Dict] = {}  # Cache for geolocation data
+        self._ip_traffic_matrix: Dict[Tuple[str, str], int] = defaultdict(int)  # For heatmap
+        self._port_usage: Dict[int, int] = defaultdict(int)  # Port usage statistics
         
         # Time tracking
         self._last_update_time = time.time()
@@ -72,18 +76,25 @@ class NetworkVisualization(QWidget):
         self.clear_button.clicked.connect(self._clear_data)
         controls_layout.addWidget(self.clear_button)
         
+        # Protocol chart type selector
+        controls_layout.addWidget(QLabel("Protokoły:"))
+        self.protocol_chart_type = QComboBox()
+        self.protocol_chart_type.addItems(["Wykres kołowy", "Wykres słupkowy"])
+        self.protocol_chart_type.currentTextChanged.connect(self._update_protocol_chart)
+        controls_layout.addWidget(self.protocol_chart_type)
+        
         controls_layout.addStretch()
         layout.addLayout(controls_layout)
         
-        # Main visualization area
-        main_splitter = QSplitter(Qt.Horizontal)
+        # Main visualization area with tabs
+        self.viz_tabs = QTabWidget()
         
-        # Left side: Charts
-        charts_widget = QWidget()
-        charts_layout = QVBoxLayout(charts_widget)
+        # Tab 1: Time Series Charts
+        time_series_widget = QWidget()
+        time_series_layout = QVBoxLayout(time_series_widget)
         
         # Traffic intensity chart
-        self.traffic_figure = Figure(figsize=(8, 3))
+        self.traffic_figure = Figure(figsize=(10, 4))
         self.traffic_canvas = FigureCanvas(self.traffic_figure)
         self.traffic_canvas.mpl_connect('scroll_event', self._on_chart_scroll)
         self.traffic_canvas.mpl_connect('button_press_event', self._on_chart_click)
@@ -91,10 +102,10 @@ class NetworkVisualization(QWidget):
         self.traffic_ax.set_title("Natężenie ruchu sieciowego")
         self.traffic_ax.set_xlabel("Czas")
         self.traffic_ax.set_ylabel("Pakiety/sek")
-        charts_layout.addWidget(self.traffic_canvas)
+        time_series_layout.addWidget(self.traffic_canvas)
         
         # Data size chart
-        self.size_figure = Figure(figsize=(8, 3))
+        self.size_figure = Figure(figsize=(10, 4))
         self.size_canvas = FigureCanvas(self.size_figure)
         self.size_canvas.mpl_connect('scroll_event', self._on_chart_scroll)
         self.size_canvas.mpl_connect('button_press_event', self._on_chart_click)
@@ -102,42 +113,79 @@ class NetworkVisualization(QWidget):
         self.size_ax.set_title("Rozmiar przesyłanych danych")
         self.size_ax.set_xlabel("Czas")
         self.size_ax.set_ylabel("Bajty/sek")
-        charts_layout.addWidget(self.size_canvas)
+        time_series_layout.addWidget(self.size_canvas)
         
-        main_splitter.addWidget(charts_widget)
+        self.viz_tabs.addTab(time_series_widget, "Ruch w czasie")
         
-        # Right side: Geolocation and stats
-        info_widget = QWidget()
-        info_layout = QVBoxLayout(info_widget)
+        # Tab 2: Protocol Analysis
+        protocol_widget = QWidget()
+        protocol_layout = QVBoxLayout(protocol_widget)
         
         # Protocol distribution chart
-        self.protocol_figure = Figure(figsize=(4, 4))
+        self.protocol_figure = Figure(figsize=(8, 6))
         self.protocol_canvas = FigureCanvas(self.protocol_figure)
         self.protocol_ax = self.protocol_figure.add_subplot(111)
         self.protocol_ax.set_title("Rozkład protokołów")
-        info_layout.addWidget(self.protocol_canvas)
+        protocol_layout.addWidget(self.protocol_canvas)
+        
+        self.viz_tabs.addTab(protocol_widget, "Protokoły")
+        
+        # Tab 3: IP Traffic Heatmap
+        heatmap_widget = QWidget()
+        heatmap_layout = QVBoxLayout(heatmap_widget)
+        
+        # IP traffic heatmap
+        self.heatmap_figure = Figure(figsize=(10, 8))
+        self.heatmap_canvas = FigureCanvas(self.heatmap_figure)
+        self.heatmap_ax = self.heatmap_figure.add_subplot(111)
+        self.heatmap_ax.set_title("Mapa ruchu IP (źródło → cel)")
+        heatmap_layout.addWidget(self.heatmap_canvas)
+        
+        self.viz_tabs.addTab(heatmap_widget, "Mapa ruchu IP")
+        
+        # Tab 4: Network Statistics
+        stats_widget = QWidget()
+        stats_layout = QHBoxLayout(stats_widget)
+        
+        # Left side: Top talkers chart
+        top_talkers_group = QGroupBox("Top 10 źródeł IP")
+        top_talkers_layout = QVBoxLayout(top_talkers_group)
+        self.top_talkers_figure = Figure(figsize=(6, 4))
+        self.top_talkers_canvas = FigureCanvas(self.top_talkers_figure)
+        self.top_talkers_ax = self.top_talkers_figure.add_subplot(111)
+        top_talkers_layout.addWidget(self.top_talkers_canvas)
+        stats_layout.addWidget(top_talkers_group)
+        
+        # Right side: Port usage
+        port_usage_group = QGroupBox("Wykorzystanie portów")
+        port_usage_layout = QVBoxLayout(port_usage_group)
+        self.port_usage_figure = Figure(figsize=(6, 4))
+        self.port_usage_canvas = FigureCanvas(self.port_usage_figure)
+        self.port_usage_ax = self.port_usage_figure.add_subplot(111)
+        port_usage_layout.addWidget(self.port_usage_canvas)
+        stats_layout.addWidget(port_usage_group)
+        
+        self.viz_tabs.addTab(stats_widget, "Statystyki")
+        
+        # Tab 5: Geolocation
+        geo_widget = QWidget()
+        geo_layout = QVBoxLayout(geo_widget)
         
         # Geolocation info
-        info_layout.addWidget(QLabel("Informacje geolokalizacyjne:"))
+        geo_layout.addWidget(QLabel("Informacje geolokalizacyjne:"))
         self.geo_text = QTextEdit()
-        self.geo_text.setMaximumHeight(200)
         self.geo_text.setReadOnly(True)
-        info_layout.addWidget(self.geo_text)
+        geo_layout.addWidget(self.geo_text)
         
         # Network statistics
-        info_layout.addWidget(QLabel("Statystyki sieciowe:"))
+        geo_layout.addWidget(QLabel("Statystyki sieciowe:"))
         self.stats_text = QTextEdit()
-        self.stats_text.setMaximumHeight(150)
         self.stats_text.setReadOnly(True)
-        info_layout.addWidget(self.stats_text)
+        geo_layout.addWidget(self.stats_text)
         
-        main_splitter.addWidget(info_widget)
+        self.viz_tabs.addTab(geo_widget, "Geolokalizacja")
         
-        # Set splitter proportions
-        main_splitter.setStretchFactor(0, 3)
-        main_splitter.setStretchFactor(1, 1)
-        
-        layout.addWidget(main_splitter)
+        layout.addWidget(self.viz_tabs)
         
     def _setup_timers(self) -> None:
         """Setup timers for automatic data updates."""
@@ -170,6 +218,18 @@ class NetworkVisualization(QWidget):
                 
                 # Update protocol counts
                 self._protocol_counts[packet.protocol] += 1
+                
+                # Update IP traffic matrix for heatmap
+                if packet.src_ip != "?" and packet.dst_ip != "?":
+                    src_key = self._normalize_ip_for_heatmap(packet.src_ip)
+                    dst_key = self._normalize_ip_for_heatmap(packet.dst_ip)
+                    self._ip_traffic_matrix[(src_key, dst_key)] += 1
+                
+                # Update port usage statistics
+                if packet.dst_port:
+                    self._port_usage[packet.dst_port] += 1
+                if packet.src_port:
+                    self._port_usage[packet.src_port] += 1
         
         # Store data point
         timestamp = datetime.fromtimestamp(current_time)
@@ -178,11 +238,32 @@ class NetworkVisualization(QWidget):
         
         self._last_update_time = current_time
         
+    def _normalize_ip_for_heatmap(self, ip: str) -> str:
+        """Normalize IP addresses for heatmap display."""
+        # Group private IPs into categories for better visualization
+        if ip.startswith("192.168."):
+            return "192.168.x.x"
+        elif ip.startswith("10."):
+            return "10.x.x.x"
+        elif ip.startswith("172.16.") or ip.startswith("172.17.") or ip.startswith("172.18.") or ip.startswith("172.19."):
+            return "172.16-31.x.x"
+        elif ip.startswith("127."):
+            return "localhost"
+        else:
+            # For public IPs, keep the first two octets for privacy
+            parts = ip.split(".")
+            if len(parts) >= 2:
+                return f"{parts[0]}.{parts[1]}.x.x"
+            return ip
+        
     def _update_visualizations(self) -> None:
         """Update all visualization components."""
         self._update_traffic_chart()
         self._update_size_chart()
         self._update_protocol_chart()
+        self._update_ip_heatmap()
+        self._update_top_talkers_chart()
+        self._update_port_usage_chart()
         self._update_geolocation_info()
         self._update_network_stats()
         
@@ -287,7 +368,7 @@ class NetworkVisualization(QWidget):
         self.size_canvas.draw()
         
     def _update_protocol_chart(self) -> None:
-        """Update the protocol distribution pie chart."""
+        """Update the protocol distribution chart (pie or bar chart)."""
         if not self._protocol_counts:
             return
             
@@ -296,26 +377,191 @@ class NetworkVisualization(QWidget):
         protocols = list(self._protocol_counts.keys())
         counts = list(self._protocol_counts.values())
         
-        # Only show top 6 protocols
-        if len(protocols) > 6:
-            # Sort by count and take top 6
+        # Only show top 8 protocols
+        if len(protocols) > 8:
+            # Sort by count and take top 8
             protocol_data = sorted(zip(protocols, counts), key=lambda x: x[1], reverse=True)
-            protocols = [p[0] for p in protocol_data[:6]]
-            counts = [p[1] for p in protocol_data[:6]]
+            protocols = [p[0] for p in protocol_data[:8]]
+            counts = [p[1] for p in protocol_data[:8]]
             
             # Add "Others" category
-            other_count = sum(p[1] for p in protocol_data[6:])
+            other_count = sum(p[1] for p in protocol_data[8:])
             if other_count > 0:
                 protocols.append("Inne")
                 counts.append(other_count)
         
-        colors = plt.cm.Set3(np.linspace(0, 1, len(protocols)))
+        chart_type = self.protocol_chart_type.currentText()
         
-        self.protocol_ax.pie(counts, labels=protocols, autopct='%1.1f%%', colors=colors)
-        self.protocol_ax.set_title("Rozkład protokołów")
+        if chart_type == "Wykres kołowy":
+            # Pie chart
+            colors = plt.cm.Set3(np.linspace(0, 1, len(protocols)))
+            self.protocol_ax.pie(counts, labels=protocols, autopct='%1.1f%%', colors=colors)
+            self.protocol_ax.set_title("Rozkład protokołów")
+        else:
+            # Bar chart
+            colors = plt.cm.viridis(np.linspace(0, 1, len(protocols)))
+            bars = self.protocol_ax.bar(protocols, counts, color=colors)
+            self.protocol_ax.set_title("Rozkład protokołów")
+            self.protocol_ax.set_xlabel("Protokół")
+            self.protocol_ax.set_ylabel("Liczba pakietów")
+            
+            # Add value labels on bars
+            for bar, count in zip(bars, counts):
+                height = bar.get_height()
+                self.protocol_ax.text(bar.get_x() + bar.get_width()/2., height + max(counts)*0.01,
+                                    f'{count}', ha='center', va='bottom')
+            
+            # Rotate x-axis labels for better readability
+            plt.setp(self.protocol_ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
         
         self.protocol_figure.tight_layout()
         self.protocol_canvas.draw()
+        
+    def _update_ip_heatmap(self) -> None:
+        """Update the IP traffic heatmap."""
+        if not self._ip_traffic_matrix:
+            return
+            
+        self.heatmap_ax.clear()
+        
+        # Get top IP pairs for better visualization
+        sorted_pairs = sorted(self._ip_traffic_matrix.items(), key=lambda x: x[1], reverse=True)[:20]
+        
+        if not sorted_pairs:
+            return
+        
+        # Create matrix for heatmap
+        sources = sorted(set([pair[0][0] for pair in sorted_pairs]))
+        destinations = sorted(set([pair[0][1] for pair in sorted_pairs]))
+        
+        if len(sources) < 2 or len(destinations) < 2:
+            self.heatmap_ax.text(0.5, 0.5, 'Zbyt mało danych dla mapy cieplnej', 
+                               ha='center', va='center', transform=self.heatmap_ax.transAxes)
+            self.heatmap_canvas.draw()
+            return
+        
+        # Create the matrix
+        matrix = np.zeros((len(sources), len(destinations)))
+        for (src, dst), count in sorted_pairs:
+            if src in sources and dst in destinations:
+                src_idx = sources.index(src)
+                dst_idx = destinations.index(dst)
+                matrix[src_idx][dst_idx] = count
+        
+        # Create heatmap using seaborn for better styling
+        sns.heatmap(matrix, 
+                   xticklabels=destinations,
+                   yticklabels=sources,
+                   annot=True, 
+                   fmt='g',
+                   cmap='YlOrRd',
+                   ax=self.heatmap_ax,
+                   cbar_kws={'label': 'Liczba pakietów'})
+        
+        self.heatmap_ax.set_title("Mapa ruchu IP (źródło → cel)")
+        self.heatmap_ax.set_xlabel("IP docelowe")
+        self.heatmap_ax.set_ylabel("IP źródłowe")
+        
+        # Rotate labels for better readability
+        plt.setp(self.heatmap_ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+        plt.setp(self.heatmap_ax.yaxis.get_majorticklabels(), rotation=0)
+        
+        self.heatmap_figure.tight_layout()
+        self.heatmap_canvas.draw()
+        
+    def _update_top_talkers_chart(self) -> None:
+        """Update the top IP sources chart."""
+        if not self._packets_buffer:
+            return
+            
+        self.top_talkers_ax.clear()
+        
+        # Count packets by source IP
+        ip_counts = defaultdict(int)
+        for packet in self._packets_buffer[-1000:]:  # Last 1000 packets
+            if packet.src_ip != "?":
+                normalized_ip = self._normalize_ip_for_heatmap(packet.src_ip)
+                ip_counts[normalized_ip] += 1
+        
+        if not ip_counts:
+            return
+            
+        # Get top 10
+        top_ips = sorted(ip_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        ips, counts = zip(*top_ips)
+        
+        # Create horizontal bar chart
+        y_pos = np.arange(len(ips))
+        colors = plt.cm.viridis(np.linspace(0, 1, len(ips)))
+        bars = self.top_talkers_ax.barh(y_pos, counts, color=colors)
+        
+        self.top_talkers_ax.set_yticks(y_pos)
+        self.top_talkers_ax.set_yticklabels(ips)
+        self.top_talkers_ax.set_xlabel("Liczba pakietów")
+        self.top_talkers_ax.set_title("Top 10 źródeł IP")
+        
+        # Add value labels
+        for i, (bar, count) in enumerate(zip(bars, counts)):
+            width = bar.get_width()
+            self.top_talkers_ax.text(width + max(counts)*0.01, bar.get_y() + bar.get_height()/2,
+                                   f'{count}', ha='left', va='center')
+        
+        self.top_talkers_figure.tight_layout()
+        self.top_talkers_canvas.draw()
+        
+    def _update_port_usage_chart(self) -> None:
+        """Update the port usage chart."""
+        if not self._port_usage:
+            return
+            
+        self.port_usage_ax.clear()
+        
+        # Get top 10 ports
+        top_ports = sorted(self._port_usage.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        if not top_ports:
+            return
+            
+        ports, counts = zip(*top_ports)
+        port_labels = [self._get_port_name(port) for port in ports]
+        
+        # Create bar chart
+        colors = plt.cm.plasma(np.linspace(0, 1, len(ports)))
+        bars = self.port_usage_ax.bar(range(len(ports)), counts, color=colors)
+        
+        self.port_usage_ax.set_xticks(range(len(ports)))
+        self.port_usage_ax.set_xticklabels(port_labels, rotation=45, ha='right')
+        self.port_usage_ax.set_ylabel("Liczba pakietów")
+        self.port_usage_ax.set_title("Top 10 portów")
+        
+        # Add value labels on bars
+        for bar, count in zip(bars, counts):
+            height = bar.get_height()
+            self.port_usage_ax.text(bar.get_x() + bar.get_width()/2., height + max(counts)*0.01,
+                                  f'{count}', ha='center', va='bottom')
+        
+        self.port_usage_figure.tight_layout()
+        self.port_usage_canvas.draw()
+        
+    def _get_port_name(self, port: int) -> str:
+        """Get human-readable port name."""
+        common_ports = {
+            80: "HTTP (80)",
+            443: "HTTPS (443)",
+            53: "DNS (53)",
+            22: "SSH (22)",
+            21: "FTP (21)",
+            25: "SMTP (25)",
+            110: "POP3 (110)",
+            143: "IMAP (143)",
+            993: "IMAPS (993)",
+            995: "POP3S (995)",
+            3389: "RDP (3389)",
+            1433: "MSSQL (1433)",
+            3306: "MySQL (3306)",
+            5432: "PostgreSQL (5432)",
+        }
+        return common_ports.get(port, f"Port {port}")
         
     def _update_geolocation_info(self) -> None:
         """Update geolocation information text."""
@@ -402,15 +648,23 @@ Unikalne protokoły: {len(self._protocol_counts)}"""
         self._packet_size_history.clear()
         self._protocol_counts.clear()
         self._geo_locations.clear()
+        self._ip_traffic_matrix.clear()
+        self._port_usage.clear()
         
         # Clear charts
         self.traffic_ax.clear()
         self.size_ax.clear()
         self.protocol_ax.clear()
+        self.heatmap_ax.clear()
+        self.top_talkers_ax.clear()
+        self.port_usage_ax.clear()
         
         self.traffic_canvas.draw()
         self.size_canvas.draw()
         self.protocol_canvas.draw()
+        self.heatmap_canvas.draw()
+        self.top_talkers_canvas.draw()
+        self.port_usage_canvas.draw()
         
         # Clear text areas
         self.geo_text.clear()

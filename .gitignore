@@ -127,6 +127,10 @@ dmypy.json
 
 # Test files
 test_visualization.py
+test_plot.png
+test_visualization_functionality.py
+create_enhanced_demo.py
+demo_*.png
 
 # Temporary files
 tmp.txt
