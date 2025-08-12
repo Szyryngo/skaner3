@@ -282,3 +282,105 @@ class LogWriter:
             except Exception:
                 pass
 
+
+# --- System monitoring functions ---
+def get_cpu_usage() -> Optional[float]:
+    """Get global CPU usage percentage.
+    
+    Returns:
+        CPU usage as float percentage or None if psutil unavailable.
+    """
+    if not PSUTIL_AVAILABLE:
+        return None
+    try:
+        return psutil.cpu_percent(interval=None)
+    except Exception:
+        return None
+
+
+def get_ram_usage() -> Optional[float]:
+    """Get global RAM usage percentage.
+    
+    Returns:
+        RAM usage as float percentage or None if psutil unavailable.
+    """
+    if not PSUTIL_AVAILABLE:
+        return None
+    try:
+        return psutil.virtual_memory().percent
+    except Exception:
+        return None
+
+
+def get_process_cpu_usage() -> Optional[float]:
+    """Get CPU usage percentage for current process.
+    
+    Returns:
+        Process CPU usage as float percentage or None if psutil unavailable.
+    """
+    if not PSUTIL_AVAILABLE:
+        return None
+    try:
+        process = psutil.Process()
+        return process.cpu_percent(interval=None)
+    except Exception:
+        return None
+
+
+def get_process_ram_usage() -> tuple[Optional[float], Optional[float]]:
+    """Get RAM usage for current process in MB and percentage.
+    
+    Returns:
+        Tuple of (MB used, percentage) or (None, None) if psutil unavailable.
+    """
+    if not PSUTIL_AVAILABLE:
+        return None, None
+    try:
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        memory_percent = process.memory_percent()
+        memory_mb = memory_info.rss / (1024 * 1024)  # Convert bytes to MB
+        return memory_mb, memory_percent
+    except Exception:
+        return None, None
+
+
+def get_disk_io() -> tuple[Optional[float], Optional[float], Optional[int], Optional[int]]:
+    """Get disk I/O statistics for all disks.
+    
+    Returns:
+        Tuple of (read_bytes, write_bytes, read_count, write_count) or all None if unavailable.
+        Bytes are in MB.
+    """
+    if not PSUTIL_AVAILABLE:
+        return None, None, None, None
+    try:
+        disk_io = psutil.disk_io_counters()
+        if disk_io is None:
+            return None, None, None, None
+        read_mb = disk_io.read_bytes / (1024 * 1024)  # Convert to MB
+        write_mb = disk_io.write_bytes / (1024 * 1024)  # Convert to MB
+        return read_mb, write_mb, disk_io.read_count, disk_io.write_count
+    except Exception:
+        return None, None, None, None
+
+
+def get_net_io() -> tuple[Optional[float], Optional[float], Optional[int], Optional[int]]:
+    """Get network I/O statistics for all interfaces.
+    
+    Returns:
+        Tuple of (sent_bytes, recv_bytes, sent_packets, recv_packets) or all None if unavailable.
+        Bytes are in MB.
+    """
+    if not PSUTIL_AVAILABLE:
+        return None, None, None, None
+    try:
+        net_io = psutil.net_io_counters()
+        if net_io is None:
+            return None, None, None, None
+        sent_mb = net_io.bytes_sent / (1024 * 1024)  # Convert to MB
+        recv_mb = net_io.bytes_recv / (1024 * 1024)  # Convert to MB
+        return sent_mb, recv_mb, net_io.packets_sent, net_io.packets_recv
+    except Exception:
+        return None, None, None, None
+

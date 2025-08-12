@@ -20,13 +20,16 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import QSettings
 import json
-import psutil
 
 from core.ai_engine import AIEngine
 from core import APP_NAME, __version__
 from core.packet_sniffer import PacketSniffer
 from core.rules import RuleEngine
-from core.utils import packetinfo_to_row, PacketInfo, LogWriter
+from core.utils import (
+    packetinfo_to_row, PacketInfo, LogWriter,
+    get_cpu_usage, get_ram_usage, get_process_cpu_usage, get_process_ram_usage,
+    get_disk_io, get_net_io
+)
 from .ai_status_viewer import AIStatusViewer
 from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
@@ -50,6 +53,12 @@ class MainWindow(QMainWindow):
         # Bufor pakietów dla UI
         self._packets_buffer: list[PacketInfo] = []
         self._total_packets = 0
+
+        # I/O rate tracking for previous values
+        self._prev_disk_read: Optional[float] = None
+        self._prev_disk_write: Optional[float] = None
+        self._prev_net_sent: Optional[float] = None
+        self._prev_net_recv: Optional[float] = None
 
         # UI
         self.tabs = QTabWidget(self)
@@ -97,8 +106,9 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self._set_status("Idle")
 
-        # Timer do metryk systemowych (CPU/RAM)
-        self.resource_label = QLabel("CPU: --%  RAM: --%", self)
+        # Timer do metryk systemowych (CPU/RAM/I/O)
+        self.resource_label = QLabel("CPU: --% | RAM: --%\nProc: CPU --% | RAM --MB (--%)\nDisk: R --MB/s W --MB/s | Net: S --MB/s R --MB/s", self)
+        self.resource_label.setStyleSheet("font-family: monospace; font-size: 9px; padding: 2px;")
         self.resource_timer = QTimer(self)
         self.resource_timer.setInterval(1000)
         self.resource_timer.timeout.connect(self._update_resource_label)
@@ -215,12 +225,61 @@ class MainWindow(QMainWindow):
         self._set_status(f"{mode} | {self._total_packets} pkt")
 
     def _update_resource_label(self) -> None:
+        """Update the resource monitoring label with comprehensive system metrics."""
         try:
-            cpu = psutil.cpu_percent(interval=None)
-            ram = psutil.virtual_memory().percent
-            self.resource_label.setText(f"CPU: {cpu:.0f}%  RAM: {ram:.0f}%")
+            # Get all metrics using the new utility functions
+            cpu_global = get_cpu_usage()
+            ram_global = get_ram_usage()
+            cpu_process = get_process_cpu_usage()
+            ram_process_mb, ram_process_pct = get_process_ram_usage()
+            disk_read, disk_write, _, _ = get_disk_io()
+            net_sent, net_recv, _, _ = get_net_io()
+
+            # Format global metrics
+            cpu_str = f"{cpu_global:.1f}%" if cpu_global is not None else "--"
+            ram_str = f"{ram_global:.1f}%" if ram_global is not None else "--"
+
+            # Format process metrics
+            proc_cpu_str = f"{cpu_process:.1f}%" if cpu_process is not None else "--"
+            proc_ram_mb_str = f"{ram_process_mb:.1f}MB" if ram_process_mb is not None else "--MB"
+            proc_ram_pct_str = f"{ram_process_pct:.1f}%" if ram_process_pct is not None else "--"
+
+            # Calculate I/O rates (MB/s)
+            disk_read_rate_str = "--MB/s"
+            disk_write_rate_str = "--MB/s"
+            if disk_read is not None and disk_write is not None:
+                if self._prev_disk_read is not None and self._prev_disk_write is not None:
+                    disk_read_rate = disk_read - self._prev_disk_read
+                    disk_write_rate = disk_write - self._prev_disk_write
+                    disk_read_rate_str = f"{disk_read_rate:.1f}MB/s"
+                    disk_write_rate_str = f"{disk_write_rate:.1f}MB/s"
+                self._prev_disk_read = disk_read
+                self._prev_disk_write = disk_write
+
+            # Calculate network rates (MB/s)
+            net_sent_rate_str = "--MB/s"
+            net_recv_rate_str = "--MB/s"
+            if net_sent is not None and net_recv is not None:
+                if self._prev_net_sent is not None and self._prev_net_recv is not None:
+                    net_sent_rate = net_sent - self._prev_net_sent
+                    net_recv_rate = net_recv - self._prev_net_recv
+                    net_sent_rate_str = f"{net_sent_rate:.1f}MB/s"
+                    net_recv_rate_str = f"{net_recv_rate:.1f}MB/s"
+                self._prev_net_sent = net_sent
+                self._prev_net_recv = net_recv
+
+            # Build the multi-line status text
+            status_text = (
+                f"CPU: {cpu_str} | RAM: {ram_str}\n"
+                f"Proc: CPU {proc_cpu_str} | RAM {proc_ram_mb_str} ({proc_ram_pct_str})\n"
+                f"Disk: R {disk_read_rate_str} W {disk_write_rate_str} | Net: S {net_sent_rate_str} R {net_recv_rate_str}"
+            )
+            
+            self.resource_label.setText(status_text)
+        
         except Exception:
-            self.resource_label.setText("CPU: n/a  RAM: n/a")
+            # Fallback to simple display in case of any errors
+            self.resource_label.setText("CPU: n/a | RAM: n/a\nProc: CPU n/a | RAM n/a\nDisk: R n/a W n/a | Net: S n/a R n/a")
 
     # --- Settings (UI/state) ---
     def _save_ui_settings(self) -> None:
