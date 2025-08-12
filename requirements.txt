@@ -6,3 +6,4 @@ requests
 psutil
 river
 matplotlib
+seaborn
