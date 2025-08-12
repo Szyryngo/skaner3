@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Dict, List, Optional
 from collections import deque
 
@@ -18,6 +19,7 @@ except Exception:
     RIVER_AVAILABLE = False
 
 from .utils import PacketInfo
+from .diagnostics_history import DiagnosticsHistory, AIDecision
 
 
 class AIEngine:
@@ -38,6 +40,7 @@ class AIEngine:
         ml_stream_enabled: bool = True,
         stream_z_threshold: float = 2.5,
         combined_threshold: float = 0.7,
+        enable_history: bool = True,
     ) -> None:
         self.large_packet_threshold = large_packet_threshold
         self.ml_enabled = ml_enabled and SKLEARN_AVAILABLE
@@ -61,6 +64,14 @@ class AIEngine:
         self._stream_m2: float = 0.0
         self._last_stream_score: Optional[float] = None
         self._last_stream_z: Optional[float] = None
+        
+        # Diagnostics history
+        self._history: Optional[DiagnosticsHistory] = None
+        if enable_history:
+            try:
+                self._history = DiagnosticsHistory()
+            except Exception:
+                self._history = None
 
     # --- Feature engineering ---
     @staticmethod
@@ -191,6 +202,31 @@ class AIEngine:
         self._last_stream_score = stream_score
         self._last_stream_z = stream_z
 
+        # Zapisz decyzję do historii
+        if self._history is not None:
+            try:
+                ai_decision = AIDecision(
+                    timestamp=time.time(),
+                    decision_type="packet_analysis",
+                    score=float(combined_score if combined_score is not None else heuristic_score),
+                    is_anomaly=bool(is_anomaly),
+                    reasons=reasons,
+                    packet_info={
+                        "src_ip": packet.src_ip,
+                        "dst_ip": packet.dst_ip,
+                        "src_port": packet.src_port,
+                        "dst_port": packet.dst_port,
+                        "protocol": packet.protocol,
+                        "length": packet.length,
+                    },
+                    ml_decision=self._last_ml_decision,
+                    stream_score=stream_score,
+                    stream_z=stream_z
+                )
+                self._history.add_ai_decision(ai_decision)
+            except Exception:
+                pass
+
         return {
             "is_anomaly": bool(is_anomaly),
             "score": round(float(combined_score if combined_score is not None else heuristic_score), 3),
@@ -216,4 +252,39 @@ class AIEngine:
             "stream_count": self._stream_count,
             "last_stream_score": self._last_stream_score,
             "last_stream_z": self._last_stream_z,
+            "history_enabled": self._history is not None,
         }
+    
+    def get_diagnostics_history(self) -> Optional[DiagnosticsHistory]:
+        """Zwraca obiekt historii diagnostyki, jeśli jest dostępny."""
+        return self._history
+    
+    def get_recent_decisions(self, hours: int = 1, limit: int = 100) -> List[Dict[str, object]]:
+        """
+        Zwraca listę ostatnich decyzji AI w formacie słownika.
+        
+        Args:
+            hours: Liczba godzin wstecz
+            limit: Maksymalna liczba wyników
+        """
+        if self._history is None:
+            return []
+        
+        try:
+            decisions = self._history.get_ai_decisions(hours=hours, limit=limit)
+            return [
+                {
+                    "timestamp": d.timestamp,
+                    "decision_type": d.decision_type,
+                    "score": d.score,
+                    "is_anomaly": d.is_anomaly,
+                    "reasons": d.reasons,
+                    "packet_info": d.packet_info,
+                    "ml_decision": d.ml_decision,
+                    "stream_score": d.stream_score,
+                    "stream_z": d.stream_z,
+                }
+                for d in decisions
+            ]
+        except Exception:
+            return []

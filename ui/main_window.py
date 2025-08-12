@@ -31,6 +31,7 @@ from .ai_status_viewer import AIStatusViewer
 from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
 from .packet_viewer import PacketViewer
+from .system_diagnostics_tab import SystemDiagnosticsTab
 
 
 class MainWindow(QMainWindow):
@@ -56,6 +57,7 @@ class MainWindow(QMainWindow):
         self.packet_viewer = PacketViewer(self)
         self.alert_viewer = AlertViewer(self)
         self.ai_status = AIStatusViewer(self)
+        self.system_diagnostics = SystemDiagnosticsTab(self)
         
         # Przekaż bufor pakietów do AlertViewer dla podglądu
         self.alert_viewer.set_packets_buffer(self._packets_buffer)
@@ -90,6 +92,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(tab_packets, "Pakiety")
         self.tabs.addTab(self.alert_viewer, "Alerty")
         self.tabs.addTab(self.ai_status, "AI")
+        self.tabs.addTab(self.system_diagnostics, "Diagnostyka systemu i optymalizacja AI")
         self.setCentralWidget(self.tabs)
 
         # Status bar
@@ -148,6 +151,10 @@ class MainWindow(QMainWindow):
 
         # Inicjalizacja AI z konfiguracji
         self._recreate_ai()
+        
+        # Przekaż silnik AI do zakładki diagnostyki
+        self.system_diagnostics.set_ai_engine(self.ai_engine)
+        
         # Przywrócenie UI
         self._restore_ui_settings()
 
@@ -271,6 +278,10 @@ class MainWindow(QMainWindow):
             )
         except Exception:
             self.ai_engine = AIEngine()
+        
+        # Aktualizuj referencję w zakładce diagnostyki
+        if hasattr(self, 'system_diagnostics'):
+            self.system_diagnostics.set_ai_engine(self.ai_engine)
 
     # --- Capture control ---
     def start_capture(self) -> None:
