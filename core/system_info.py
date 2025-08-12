@@ -16,7 +16,7 @@ try:
 except ImportError:
     psutil = None
 
-def get_system_info():
+def get_detailed_system_info():
     """
     Pobiera informacje o systemie operacyjnym, CPU, pamięci RAM oraz dysku.
 
@@ -67,3 +67,15 @@ def get_system_info():
         except Exception:
             pass
     return info
+
+
+def get_system_info():
+    """Zwraca podstawowe informacje o systemie w formie słownika."""
+    cpu = psutil.cpu_percent(interval=0.1)
+    ram = psutil.virtual_memory().percent
+    threads = psutil.cpu_count()
+    return {
+        "CPU (%)": cpu,
+        "RAM (%)": ram,
+        "Wątki": threads
+    }
