@@ -127,6 +127,7 @@ dmypy.json
 
 # Test files
 test_visualization.py
+test_enhanced_visualization.py
 
 # Temporary files
 tmp.txt
