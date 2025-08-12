@@ -47,7 +47,7 @@ skaner3/
 ├── main.py                   # Plik główny uruchamiający aplikację
 ├── requirements.txt          # Wymagane biblioteki Pythona
 
-Uwagi i ustalenia projektowe:  
+Uwagi i ustalenia projektowe nie do podwarzenia:  
 - Struktura katalogów i plików jest zawsze aktualizowana po każdej zmianie.  
 - W pliku tmp.txt prowadzona jest historia i bieżąca wersja struktury jako “pamięć” projektu.  
 - Struktura nigdy nie jest kasowana, tylko rozszerzana lub modyfikowana.  
