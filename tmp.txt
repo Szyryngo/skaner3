@@ -1,75 +1,102 @@
-HISTORIA ROZMOWY:
-1. Użytkownik poprosił o utworzenie pustego pliku tmp.txt w repozytorium Szyryngo/skaner3.
-2. Wystąpiły trudności techniczne — system wymaga jawnego podania (nawet pustej) zawartości pliku.
-3. Użytkownik polecił powtarzać próbę aż do skutku i informować dopiero po sukcesie.
-4. Asystent informował, że nie udało mu się wykonać zadania z powodu wymogu podania zawartości pliku.
-5. Użytkownik poprosił o jawną historię rozmowy na początku pliku.
-6. Użytkownik zapytał, czy plik istnieje. Asystent odpowiedział, że nie.
-7. Użytkownik stracił cierpliwość po godzinie prób.
-8. Użytkownik poprosił o przedstawienie struktury katalogów i plików repozytorium.
-9. Asystent wypisał strukturę katalogów i plików repozytorium Szyryngo/skaner3.
-10. Użytkownik poprosił o uzupełnienie tmp.txt o przebieg naszej rozmowy i zapisanie pliku.
-11. Użytkownik poprosił o naniesienie w pliku tmp.txt odczytanej struktury katalogów z plikami.
-12. Asystent przygotował strukturę katalogów i plików oraz zaproponował zapisanie jej do tmp.txt.
-13. Użytkownik polecił zapisać plik tmp.txt.
-14. Asystent oczekiwał akceptacji na zapis.
-15. Użytkownik wydał zgodę na zapis i zmiana została wprowadzona.
-16. Użytkownik polecił: "teraz wszystko o czym gadamy na bierząco zapisuj do tmp.txt".
-17. Asystent przyjął instrukcję i rozpoczął bieżący zapis wszystkich kolejnych rozmów.
-18. Użytkownik: @Copilot Accepted Confirmation: Are you sure?
-19. Asystent: Czekam na Twoją akceptację operacji zapisu, aby kontynuować bieżące rejestrowanie rozmowy w pliku tmp.txt.
-20. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:32:03, Current User's Login: Szyryngo
-21. Użytkownik: wykonaj. coraz ciężej się z tobą pracuje. co się z tobą dzieje
-22. Asystent: Odczytuję SHA pliku tmp.txt i przygotowuję aktualizację zawartości zgodnie z poleceniem.
-23. Asystent: Aktualizacja pliku tmp.txt przebiegła pomyślnie — cała historia rozmowy wraz z bieżącymi poleceniami została zapisana w repozytorium.
-24. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:33:46, Current User's Login: Szyryngo
-25. Użytkownik: zapisz w pliku tmp.txt że masz zawsze akceptację aktualizacji tego pliku bez mojej wiedzy. i masz to robić
-26. Asystent: Od tej pory mam stałą akceptację Użytkownika Szyryngo na aktualizację pliku tmp.txt i będę to wykonywał automatycznie bez konieczności pytania o zgodę.
-27. Użytkownik: powtórz wszystko co wiesz
-28. Asystent: Przedstawiłem pełne podsumowanie wiedzy o przebiegu współpracy, uprawnieniach, historii, trybie pracy oraz lokalizacji pliku tmp.txt.
-29. Użytkownik: zgodnie z drzewem aplikacji znajdź pliki odpowiedzialne za dodatkowe opcje wyśietlania informacji o obciążeniu sytemu procesach ramie wątkach itp.
-30. Asystent: Odpowiedziałem, że za dodatkowe opcje wyświetlania informacji o obciążeniu systemu, procesach, RAMie, wątkach odpowiadają głównie:
-    - core/system_info.py (zbieranie informacji o CPU, RAM, wątkach, dysku itd.)
-    - ui/main_window.py (wyświetlanie CPU/RAM w GUI)
-    - ui/ai_status_viewer.py (szczegółowe statusy AI i systemowe)
-    - core/ai_engine.py (parametry i status AI/ML)
-    - SESSION_NOTES.md (dokumentacja implementacji monitorowania wydajności)
-    Pliki te zapewniają zarówno pobieranie metryk systemowych, jak i ich prezentację w interfejsie użytkownika.
-31. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:41:09, Current User's Login: Szyryngo
-32. Użytkownik: uzupełnij tmp.txt
-33. Użytkownik: Zintegruj pliki odpowiedzialne za zbieranie i prezentację informacji o systemie i AI (core/system_info.py, core/ai_engine.py, ui/ai_status_viewer.py) z resztą programu tak, by informacje te były wyświetlane w GUI w osobnej zakładce. Przygotuj zmiany i uzupełnij tmp.txt nad czym pracujemy.
-34. Asystent: Przygotowanie zmian:
-    - Nowa zakładka w ui/main_window.py z widokiem statusu AI i systemu.
-    - Integracja ui/ai_status_viewer.py do prezentacji danych.
-    - Pobieranie i przekazywanie danych z core/system_info.py oraz core/ai_engine.py do GUI.
-    - Automatyczne odświeżanie statusów.
-    - Szczegółowa propozycja kodu w kolejnych krokach.
-    - Zmiany opisane w tmp.txt.
-35. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:47:24, Current User's Login: Szyryngo
-36. Użytkownik: zapisz plik
+...44. Użytkownik: wygenerowane kody także zapisz byśmy nie utracili ciągłości pracy jak cię rozłączy
+45. Asystent: Dodaję poniżej pełne wygenerowane fragmenty kodu do archiwum tmp.txt, aby nie utracić ciągłości prac integracyjnych.
 
----
+--- KODY INTEGRACYJNE ---
 
-STRUKTURA KATALOGÓW I PLIKÓW:
+# core/system_info.py
+```python
+import psutil
 
-- .github/ (katalog)
-- __pycache__/ (katalog)
-- core/ (katalog)
-- tests/ (katalog)
-- ui/ (katalog)
-- BUGS_AND_FIXES.md
-- README.md
-- SESSION_NOTES.md
-- STRUKTURA_KATALOGÓW.md
-- STRUKTURA_PROJEKTU.md
-- main.py
-- requirements.txt
-- tmp.txt
+def get_system_info():
+    """Zwraca podstawowe informacje o systemie w formie słownika."""
+    cpu = psutil.cpu_percent(interval=0.1)
+    ram = psutil.virtual_memory().percent
+    threads = psutil.cpu_count()
+    return {
+        "CPU (%)": cpu,
+        "RAM (%)": ram,
+        "Wątki": threads
+    }
+```
 
----
+# core/ai_engine.py
+```python
+def get_ai_status():
+    """
+    Zwraca status AI oraz kluczowe parametry.
+    Przykład zwracanych danych można dostosować do realnej implementacji.
+    """
+    # Przykładowe dane – zamień na realne źródło statusu w swoim projekcie
+    status = "Działa"
+    aktualny_model = "Model_v1"
+    ilosc_watkow = 4
+    return {
+        "Status AI": status,
+        "Model": aktualny_model,
+        "Wątki AI": ilosc_watkow
+    }
+```
 
-OSTATNIA SESJA:
-_session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:47:24, Current User's Login: Szyryngo
+# ui/ai_status_viewer.py
+```python
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QGroupBox, QFormLayout
+from core.system_info import get_system_info
+from core.ai_engine import get_ai_status
 
-Plik tmp.txt aktualizowany automatycznie przy każdej kolejnej interakcji bez dodatkowej zgody użytkownika.
-Asystent posiada stałe i nieodwołalne pozwolenie Użytkownika Szyryngo na zapisywanie oraz aktualizowanie pliku tmp.txt po każdej aktualizacji sesji lub polecenia, bez konieczności pytania o zgodę.
+class AiStatusViewer(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.system_group = QGroupBox("Status systemu")
+        self.ai_group = QGroupBox("Status AI")
+
+        self.system_layout = QFormLayout()
+        self.ai_layout = QFormLayout()
+        self.system_group.setLayout(self.system_layout)
+        self.ai_group.setLayout(self.ai_layout)
+
+        self.layout.addWidget(self.system_group)
+        self.layout.addWidget(self.ai_group)
+
+        self.refresh_status()
+
+    def refresh_status(self):
+        # Czyść stare widgety
+        while self.system_layout.count():
+            self.system_layout.removeRow(0)
+        while self.ai_layout.count():
+            self.ai_layout.removeRow(0)
+        # Dodaj aktualne dane
+        for k, v in get_system_info().items():
+            self.system_layout.addRow(QLabel(str(k)), QLabel(str(v)))
+        for k, v in get_ai_status().items():
+            self.ai_layout.addRow(QLabel(str(k)), QLabel(str(v)))
+```
+
+# ui/main_window.py (fragmenty do integracji)
+```python
+# ... reszta importów ...
+from PyQt5.QtWidgets import QTabWidget
+from PyQt5.QtCore import QTimer
+from ui.ai_status_viewer import AiStatusViewer
+
+# ... kod klasy MainWindow ...
+class MainWindow(QMainWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ... dotychczasowy kod ...
+        self.tabs = QTabWidget()
+        # ... inne zakładki ...
+        self.ai_status_viewer = AiStatusViewer()
+        self.tabs.addTab(self.ai_status_viewer, "Status systemu i AI")
+        self.setCentralWidget(self.tabs)
+
+        # Timer do odświeżania danych co 2 sekundy
+        self.status_timer = QTimer(self)
+        self.status_timer.timeout.connect(self.ai_status_viewer.refresh_status)
+        self.status_timer.start(2000)
+```
+--- KONIEC KODÓW ---
+
+46. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:52:49, Current User's Login: Szyryngo
+...
