@@ -3,10 +3,11 @@ from __future__ import annotations
 import random
 import socket
 import time
+import os
 from dataclasses import dataclass
 from functools import lru_cache
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 try:
     # Importowane opcjonalnie – środowisko bez scapy przejdzie w tryb symulacji
@@ -224,6 +225,87 @@ def list_network_interfaces(show_inactive: bool = False) -> list[dict]:
     except Exception:
         return []
     return results
+
+
+# --- System resource monitoring ---
+def get_cpu_usage() -> float:
+    """Zwraca globalne użycie CPU w procentach."""
+    if not PSUTIL_AVAILABLE:
+        return 0.0
+    try:
+        return psutil.cpu_percent(interval=None)
+    except Exception:
+        return 0.0
+
+
+def get_ram_usage() -> float:
+    """Zwraca globalne użycie RAM w procentach."""
+    if not PSUTIL_AVAILABLE:
+        return 0.0
+    try:
+        return psutil.virtual_memory().percent
+    except Exception:
+        return 0.0
+
+
+def get_process_cpu_usage() -> float:
+    """Zwraca użycie CPU przez bieżący proces w procentach."""
+    if not PSUTIL_AVAILABLE:
+        return 0.0
+    try:
+        return psutil.Process(os.getpid()).cpu_percent(interval=None)
+    except Exception:
+        return 0.0
+
+
+def get_process_ram_usage() -> Tuple[float, float]:
+    """Zwraca użycie RAM przez bieżący proces jako (MB, procent)."""
+    if not PSUTIL_AVAILABLE:
+        return 0.0, 0.0
+    try:
+        process = psutil.Process(os.getpid())
+        memory_info = process.memory_info()
+        memory_mb = memory_info.rss / (1024 * 1024)  # bytes to MB
+        memory_percent = process.memory_percent()
+        return memory_mb, memory_percent
+    except Exception:
+        return 0.0, 0.0
+
+
+def get_disk_io() -> Tuple[int, int, int, int]:
+    """Zwraca I/O dysków jako (read_bytes, write_bytes, read_count, write_count)."""
+    if not PSUTIL_AVAILABLE:
+        return 0, 0, 0, 0
+    try:
+        disk_io = psutil.disk_io_counters()
+        if disk_io is None:
+            return 0, 0, 0, 0
+        return (
+            disk_io.read_bytes,
+            disk_io.write_bytes,
+            disk_io.read_count,
+            disk_io.write_count
+        )
+    except Exception:
+        return 0, 0, 0, 0
+
+
+def get_net_io() -> Tuple[int, int, int, int]:
+    """Zwraca I/O sieci jako (sent_bytes, recv_bytes, sent_packets, recv_packets)."""
+    if not PSUTIL_AVAILABLE:
+        return 0, 0, 0, 0
+    try:
+        net_io = psutil.net_io_counters()
+        if net_io is None:
+            return 0, 0, 0, 0
+        return (
+            net_io.bytes_sent,
+            net_io.bytes_recv,
+            net_io.packets_sent,
+            net_io.packets_recv
+        )
+    except Exception:
+        return 0, 0, 0, 0
 
 
 # --- Rotujący logger CSV ---
