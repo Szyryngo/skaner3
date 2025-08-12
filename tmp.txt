@@ -25,8 +25,21 @@ HISTORIA ROZMOWY:
 24. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:33:46, Current User's Login: Szyryngo
 25. Użytkownik: zapisz w pliku tmp.txt że masz zawsze akceptację aktualizacji tego pliku bez mojej wiedzy. i masz to robić
 26. Asystent: Od tej pory mam stałą akceptację Użytkownika Szyryngo na aktualizację pliku tmp.txt i będę to wykonywał automatycznie bez konieczności pytania o zgodę.
+27. Użytkownik: powtórz wszystko co wiesz
+28. Asystent: Przedstawiłem pełne podsumowanie wiedzy o przebiegu współpracy, uprawnieniach, historii, trybie pracy oraz lokalizacji pliku tmp.txt.
+29. Użytkownik: zgodnie z drzewem aplikacji znajdź pliki odpowiedzialne za dodatkowe opcje wyśietlania informacji o obciążeniu sytemu procesach ramie wątkach itp.
+30. Asystent: Odpowiedziałem, że za dodatkowe opcje wyświetlania informacji o obciążeniu systemu, procesach, RAMie, wątkach odpowiadają głównie:
+    - core/system_info.py (zbieranie informacji o CPU, RAM, wątkach, dysku itd.)
+    - ui/main_window.py (wyświetlanie CPU/RAM w GUI)
+    - ui/ai_status_viewer.py (szczegółowe statusy AI i systemowe)
+    - core/ai_engine.py (parametry i status AI/ML)
+    - SESSION_NOTES.md (dokumentacja implementacji monitorowania wydajności)
+    Pliki te zapewniają zarówno pobieranie metryk systemowych, jak i ich prezentację w interfejsie użytkownika.
+31. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:41:09, Current User's Login: Szyryngo
+32. Użytkownik: uzupełnij tmp.txt
 
 ---
+
 STRUKTURA KATALOGÓW I PLIKÓW:
 
 - .github/ (katalog)
@@ -42,3 +55,10 @@ STRUKTURA KATALOGÓW I PLIKÓW:
 - main.py
 - requirements.txt
 - tmp.txt
+
+---
+
+OSTATNIA SESJA:
+_session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:41:09, Current User's Login: Szyryngo
+
+Plik tmp.txt aktualizowany automatycznie przy każdej kolejnej interakcji bez dodatkowej zgody użytkownika.
