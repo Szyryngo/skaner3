@@ -1,27 +1,26 @@
-50. Struktura katalogów i plików repozytorium (stan na 2025-08-12):
+---
 
-/  
-├── .github/  
-├── __pycache__/  
-├── core/  
-│   ├── ai_engine.py  
-│   └── system_info.py  
-├── tests/  
-├── ui/  
-│   ├── ai_status_viewer.py  
-│   └── main_window.py  
-├── BUGS_AND_FIXES.md  
-├── README.md  
-├── SESSION_NOTES.md  
-├── STRUKTURA_KATALOGÓW.md  
-├── STRUKTURA_PROJEKTU.md  
-├── main.py  
-├── requirements.txt  
-├── tmp.txt
+Oto ogólna analiza i krótki opis plików oraz katalogów znajdujących się w repozytorium Szyryngo/skaner3:
 
-Uwagi i ustalenia projektowe:  
-- Struktura katalogów i plików jest zawsze aktualizowana po każdej zmianie.  
-- W pliku tmp.txt prowadzona jest historia i bieżąca wersja struktury jako “pamięć” projektu.  
-- Struktura nigdy nie jest kasowana, tylko rozszerzana lub modyfikowana.  
-- Każda kolejna sekcja prac bazuje na tej strukturze i do niej się odnosi.  
-- To archiwum jest punktem odniesienia dla wszystkich przyszłych działań i uzgodnień.
+**Katalog główny:**
+- `.github/` – katalog na pliki konfiguracyjne GitHub (np. workflow, szablony zgłoszeń i pull requestów).
+- `BUGS_AND_FIXES.md` – lista znanych błędów oraz poprawek w projekcie.
+- `README.md` – plik z podstawowym opisem projektu, instrukcją uruchomienia i użytkowania.
+- `SESSION_NOTES.md` – notatki z sesji pracy nad projektem.
+- `STRUKTURA_KATALOGÓW.md` – dokument opisujący strukturę katalogów w projekcie.
+- `STRUKTURA_PROJEKTU.md` – dokumentacja ogólnej architektury projektu.
+- `main.py` – główny skrypt uruchamiający aplikację.
+- `requirements.txt` – lista zależności Pythona wymaganych do działania projektu.
+- `tmp.txt` – plik tymczasowy zawierający informacje pomocnicze (np. archiwalne notatki dotyczące struktury projektu).
+- `__pycache__/` – katalog z plikami tymczasowymi Pythona (.pyc).
+
+**Katalogi funkcyjne:**
+- `core/` – prawdopodobnie zawiera główną logikę aplikacji (np. silniki, przetwarzanie danych, logikę biznesową).
+- `ui/` – przechowuje pliki związane z interfejsem użytkownika (np. okna, widoki, komponenty UI).
+- `tests/` – katalog z testami jednostkowymi i/lub integracyjnymi dla różnych części projektu.
+
+Każdy z tych plików i katalogów pełni określoną funkcję:
+- Pliki Markdown (.md) służą do dokumentacji projektu.
+- Katalogi `core` i `ui` rozdzielają logikę aplikacji od interfejsu użytkownika.
+- Katalog `tests` umożliwia testowanie poprawności działania kodu.
+- Pliki takie jak `main.py` czy `requirements.txt` są standardowymi elementami projektu w Pythonie – odpowiedzialnymi za uruchomienie i zarządzanie zależnościami.
