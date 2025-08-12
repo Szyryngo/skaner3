@@ -1,27 +1,13 @@
-# skaner3
+# AI Network Sniffer
 
-## Opis projektu
+...
 
-Projekt służy do automatyzacji oraz skanowania określonych zasobów. Zawiera skrypt(y) i narzędzia wspierające analizę oraz raportowanie.
+## Stan projektu i jakość kodu (2025-08-12)
 
-## Wykonane prace
+- Wszystkie główne funkcje i komponenty programu są zaimplementowane. Nie znaleziono niezaimplementowanych szablonów funkcji ani klas (tj. z `pass`, `raise NotImplementedError` lub pustym ciałem).
+- Brak miejsc typu `TODO`, `FIXME` oraz rozbudowanych funkcji pozostawionych bez logiki.
+- Wszystkie krytyczne błędy historyczne są naprawione. Szczegóły znajdziesz w `BUGS_AND_FIXES.md`.
+- Projekt korzysta z checklisty jakości: spójność konfiguracji, kolejność inicjalizacji, poprawność składni Python, porządek importów oraz testy jednostkowe.
+- Zalecenia: Regularnie stosuj testy jednostkowe, lintowanie, code review i aktualizuj dokumentację (`SESSION_NOTES.md`).
 
-- Scalono pull request #2, w którym wprowadzono następujące zmiany:
-  - (Tutaj wpisz, co dokładnie zostało zmienione w PR #2. Dodaj opis commitów lub główne punkty zmian)
-- Zaktualizowano strukturę repozytorium po scaleniu gałęzi.
-
-## Instrukcja uruchomienia
-
-1. Sklonuj repozytorium:
-   ```bash
-   git clone https://github.com/Szyryngo/skaner3.git
-   ```
-2. Przejdź do katalogu projektu i postępuj zgodnie z instrukcjami w plikach źródłowych (dostosuj do projektu).
-
-## Kontakt
-
-Autor: Szyryngo
-
----
-
-Ten plik README został zaktualizowany po ostatnim mergu PR #2.
+...
