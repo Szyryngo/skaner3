@@ -31,6 +31,7 @@ from .ai_status_viewer import AIStatusViewer
 from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
 from .packet_viewer import PacketViewer
+from .network_visualization import NetworkVisualization
 
 
 class MainWindow(QMainWindow):
@@ -56,9 +57,13 @@ class MainWindow(QMainWindow):
         self.packet_viewer = PacketViewer(self)
         self.alert_viewer = AlertViewer(self)
         self.ai_status = AIStatusViewer(self)
+        self.network_viz = NetworkVisualization(self)
         
         # Przekaż bufor pakietów do AlertViewer dla podglądu
         self.alert_viewer.set_packets_buffer(self._packets_buffer)
+        
+        # Przekaż bufor pakietów do NetworkVisualization
+        self.network_viz.set_packets_buffer(self._packets_buffer)
 
         # Szczegóły pakietu (hex/ascii/geolokalizacja)
         self.detail_hex = QTextEdit(self)
@@ -90,6 +95,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(tab_packets, "Pakiety")
         self.tabs.addTab(self.alert_viewer, "Alerty")
         self.tabs.addTab(self.ai_status, "AI")
+        self.tabs.addTab(self.network_viz, "Wizualizacja")
         self.setCentralWidget(self.tabs)
 
         # Status bar
