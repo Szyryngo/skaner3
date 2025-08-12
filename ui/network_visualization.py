@@ -85,6 +85,8 @@ class NetworkVisualization(QWidget):
         # Traffic intensity chart
         self.traffic_figure = Figure(figsize=(8, 3))
         self.traffic_canvas = FigureCanvas(self.traffic_figure)
+        self.traffic_canvas.mpl_connect('scroll_event', self._on_chart_scroll)
+        self.traffic_canvas.mpl_connect('button_press_event', self._on_chart_click)
         self.traffic_ax = self.traffic_figure.add_subplot(111)
         self.traffic_ax.set_title("Natężenie ruchu sieciowego")
         self.traffic_ax.set_xlabel("Czas")
@@ -94,6 +96,8 @@ class NetworkVisualization(QWidget):
         # Data size chart
         self.size_figure = Figure(figsize=(8, 3))
         self.size_canvas = FigureCanvas(self.size_figure)
+        self.size_canvas.mpl_connect('scroll_event', self._on_chart_scroll)
+        self.size_canvas.mpl_connect('button_press_event', self._on_chart_click)
         self.size_ax = self.size_figure.add_subplot(111)
         self.size_ax.set_title("Rozmiar przesyłanych danych")
         self.size_ax.set_xlabel("Czas")
@@ -191,15 +195,44 @@ class NetworkVisualization(QWidget):
         
         times, counts = zip(*self._traffic_history)
         
-        self.traffic_ax.plot(times, counts, 'b-', linewidth=2)
+        # Color code based on traffic intensity
+        colors = []
+        max_count = max(counts) if counts else 1
+        for count in counts:
+            if count == 0:
+                colors.append('gray')
+            elif count < max_count * 0.3:
+                colors.append('green')
+            elif count < max_count * 0.7:
+                colors.append('orange')
+            else:
+                colors.append('red')
+        
+        # Create line plot with color segments
+        self.traffic_ax.plot(times, counts, 'b-', linewidth=2, alpha=0.7)
+        
+        # Add scatter plot for color coding
+        if len(times) > 1:
+            for i in range(len(times)):
+                self.traffic_ax.scatter(times[i], counts[i], c=colors[i], s=30, alpha=0.8)
+        
         self.traffic_ax.set_title("Natężenie ruchu sieciowego")
         self.traffic_ax.set_xlabel("Czas")
         self.traffic_ax.set_ylabel("Pakiety/sek")
         self.traffic_ax.grid(True, alpha=0.3)
         
         # Format x-axis for time
-        self.traffic_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
-        self.traffic_ax.xaxis.set_major_locator(mdates.SecondLocator(interval=30))
+        if len(times) > 1:
+            time_range = (times[-1] - times[0]).total_seconds()
+            if time_range > 3600:  # More than 1 hour
+                self.traffic_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+                self.traffic_ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=10))
+            elif time_range > 600:  # More than 10 minutes
+                self.traffic_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+                self.traffic_ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=2))
+            else:
+                self.traffic_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+                self.traffic_ax.xaxis.set_major_locator(mdates.SecondLocator(interval=30))
         
         # Rotate labels for better readability
         plt.setp(self.traffic_ax.xaxis.get_majorticklabels(), rotation=45)
@@ -216,15 +249,36 @@ class NetworkVisualization(QWidget):
         
         times, sizes = zip(*self._packet_size_history)
         
+        # Convert bytes to more readable units
+        max_size = max(sizes) if sizes else 1
+        if max_size > 1024 * 1024:  # MB
+            unit = "MB"
+            sizes = [s / (1024 * 1024) for s in sizes]
+        elif max_size > 1024:  # KB
+            unit = "KB"
+            sizes = [s / 1024 for s in sizes]
+        else:
+            unit = "Bytes"
+        
         self.size_ax.plot(times, sizes, 'g-', linewidth=2)
+        self.size_ax.fill_between(times, sizes, alpha=0.3, color='green')
         self.size_ax.set_title("Rozmiar przesyłanych danych")
         self.size_ax.set_xlabel("Czas")
-        self.size_ax.set_ylabel("Bajty/sek")
+        self.size_ax.set_ylabel(f"{unit}/sek")
         self.size_ax.grid(True, alpha=0.3)
         
         # Format x-axis for time
-        self.size_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
-        self.size_ax.xaxis.set_major_locator(mdates.SecondLocator(interval=30))
+        if len(times) > 1:
+            time_range = (times[-1] - times[0]).total_seconds()
+            if time_range > 3600:  # More than 1 hour
+                self.size_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+                self.size_ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=10))
+            elif time_range > 600:  # More than 10 minutes
+                self.size_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+                self.size_ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=2))
+            else:
+                self.size_ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+                self.size_ax.xaxis.set_major_locator(mdates.SecondLocator(interval=30))
         
         # Rotate labels for better readability
         plt.setp(self.size_ax.xaxis.get_majorticklabels(), rotation=45)
@@ -361,3 +415,39 @@ Unikalne protokoły: {len(self._protocol_counts)}"""
         # Clear text areas
         self.geo_text.clear()
         self.stats_text.clear()
+        
+    def _on_chart_scroll(self, event) -> None:
+        """Handle mouse scroll for chart zooming."""
+        if event.inaxes is None:
+            return
+            
+        # Zoom in/out based on scroll direction
+        scale_factor = 1.1 if event.step > 0 else 1/1.1
+        
+        xlim = event.inaxes.get_xlim()
+        ylim = event.inaxes.get_ylim()
+        
+        # Get mouse position
+        xdata = event.xdata
+        ydata = event.ydata
+        
+        if xdata is not None and ydata is not None:
+            # Zoom around mouse position
+            x_range = (xlim[1] - xlim[0]) / 2
+            y_range = (ylim[1] - ylim[0]) / 2
+            
+            new_x_range = x_range / scale_factor
+            new_y_range = y_range / scale_factor
+            
+            event.inaxes.set_xlim([xdata - new_x_range, xdata + new_x_range])
+            event.inaxes.set_ylim([ydata - new_y_range, ydata + new_y_range])
+            
+            event.canvas.draw()
+            
+    def _on_chart_click(self, event) -> None:
+        """Handle chart click events."""
+        if event.dblclick:
+            # Double-click to reset zoom
+            if event.inaxes is not None:
+                event.inaxes.autoscale()
+                event.canvas.draw()
