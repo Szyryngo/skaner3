@@ -39,6 +39,18 @@ class AIEngine:
         stream_z_threshold: float = 2.5,
         combined_threshold: float = 0.7,
     ) -> None:
+        """Inicjalizuje silnik wykrywania anomalii z konfigurowalnymi parametrami.
+
+        Args:
+            large_packet_threshold: Próg wielkości pakietu w bajtach dla heurystyki (domyślnie 1400)
+            ml_enabled: Czy włączyć batch ML z IsolationForest (domyślnie True)
+            ml_contamination: Oczekiwany procent anomalii dla IsolationForest (domyślnie 0.02)
+            ml_refit_interval: Co ile próbek retrenować model (domyślnie 500)
+            ml_buffer_size: Maksymalny rozmiar bufora danych (domyślnie 4000)
+            ml_stream_enabled: Czy włączyć streaming ML z HalfSpaceTrees (domyślnie True)
+            stream_z_threshold: Próg Z-score dla wykrywania anomalii w trybie streaming (domyślnie 2.5)
+            combined_threshold: Próg końcowej oceny kombinowanej (domyślnie 0.7)
+        """
         self.large_packet_threshold = large_packet_threshold
         self.ml_enabled = ml_enabled and SKLEARN_AVAILABLE
         self.ml_contamination = ml_contamination
@@ -65,10 +77,26 @@ class AIEngine:
     # --- Feature engineering ---
     @staticmethod
     def _protocol_to_int(protocol: str) -> int:
+        """Konwertuje nazwę protokołu na wartość numeryczną dla ML.
+        
+        Args:
+            protocol: Nazwa protokołu (TCP, UDP, IP)
+            
+        Returns:
+            Wartość numeryczna: TCP=1, UDP=2, IP=3, inne=0
+        """
         mapping = {"TCP": 1, "UDP": 2, "IP": 3}
         return mapping.get(protocol.upper(), 0)
 
     def _packet_to_features(self, p: PacketInfo) -> np.ndarray:
+        """Konwertuje informacje o pakiecie na wektor cech dla batch ML.
+        
+        Args:
+            p: Informacje o pakiecie
+            
+        Returns:
+            Wektor numpy zawierający [długość, protokół, port_źródłowy, port_docelowy]
+        """
         proto = float(self._protocol_to_int(p.protocol))
         dst_port = float(p.dst_port or 0)
         src_port = float(p.src_port or 0)
@@ -76,6 +104,14 @@ class AIEngine:
         return np.array([length, proto, src_port, dst_port], dtype=np.float64)
 
     def _packet_to_stream_features(self, p: PacketInfo) -> Dict[str, float]:
+        """Konwertuje informacje o pakiecie na słownik cech dla streaming ML.
+        
+        Args:
+            p: Informacje o pakiecie
+            
+        Returns:
+            Słownik zawierający cechy pakietu z nazwanymi kluczami
+        """
         return {
             "length": float(p.length),
             "proto": float(self._protocol_to_int(p.protocol)),
@@ -84,6 +120,11 @@ class AIEngine:
         }
 
     def _stream_update_stats(self, value: float) -> None:
+        """Aktualizuje statystyki streaming za pomocą algorytmu Welford'a.
+        
+        Args:
+            value: Nowa wartość do uwzględnienia w statystykach
+        """
         # Welford's online algorithm
         self._stream_count += 1
         delta = value - self._stream_mean
@@ -92,12 +133,21 @@ class AIEngine:
         self._stream_m2 += delta * delta2
 
     def _stream_std(self) -> float:
+        """Oblicza odchylenie standardowe dla danych streaming.
+        
+        Returns:
+            Odchylenie standardowe lub 0.0 jeśli za mało próbek
+        """
         if self._stream_count < 2:
             return 0.0
         return float(np.sqrt(self._stream_m2 / (self._stream_count - 1)))
 
     # --- ML lifecycle ---
     def _maybe_refit(self) -> None:
+        """Okresowo retrenuje model IsolationForest na podstawie bufora danych.
+        
+        Model jest retrenowany tylko gdy bufor ma wystarczającą liczbę próbek.
+        """
         if not self.ml_enabled:
             return
         if len(self._buffer) < self.ml_refit_interval:
@@ -113,6 +163,37 @@ class AIEngine:
 
     # --- Public API ---
     def analyze_packet(self, packet: PacketInfo) -> Dict[str, object]:
+        """Analizuje pakiet pod kątem anomalii używając kombinacji heurystyk i ML.
+        
+        Metoda wykorzystuje trzy podejścia:
+        1. Heurystyki (wielkość pakietu, podejrzane porty)
+        2. Batch ML z IsolationForest
+        3. Streaming ML z HalfSpaceTrees
+        
+        Args:
+            packet: Informacje o pakiecie do analizy
+            
+        Returns:
+            Słownik zawierający:
+            - is_anomaly: czy pakiet jest anomalią (bool)
+            - score: końcowa ocena kombinowana (float)
+            - reasons: lista powodów wykrycia anomalii (List[str])
+            - combined_score: szczegółowa ocena kombinowana (float)
+            
+        Example:
+            >>> engine = AIEngine()
+            >>> packet = PacketInfo(
+            ...     timestamp=time.time(),
+            ...     src_ip="192.168.1.1",
+            ...     dst_ip="10.0.0.1", 
+            ...     src_port=12345,
+            ...     dst_port=23,
+            ...     protocol="TCP",
+            ...     length=1500
+            ... )
+            >>> result = engine.analyze_packet(packet)
+            >>> print(f"Anomalia: {result['is_anomaly']}, Ocena: {result['score']}")
+        """
         reasons: List[str] = []
 
         # Heurystyka bazowa
@@ -199,6 +280,16 @@ class AIEngine:
         }
 
     def get_status(self) -> Dict[str, object]:
+        """Zwraca aktualny status silnika AI i informacje diagnostyczne.
+        
+        Returns:
+            Słownik zawierający informacje o:
+            - dostępności bibliotek ML
+            - konfiguracji silnika
+            - liczbie przetworzonych próbek
+            - ostatnich wynikach analizy
+            - statusie modeli ML
+        """
         return {
             "sklearn_available": SKLEARN_AVAILABLE,
             "ml_enabled": self.ml_enabled,
