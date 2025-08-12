@@ -1,7 +1,4 @@
-...44. Użytkownik: wygenerowane kody także zapisz byśmy nie utracili ciągłości pracy jak cię rozłączy
-45. Asystent: Dodaję poniżej pełne wygenerowane fragmenty kodu do archiwum tmp.txt, aby nie utracić ciągłości prac integracyjnych.
-
---- KODY INTEGRACYJNE ---
+47. Asystent: Zmiany do wprowadzenia w projekcie na podstawie wcześniejszych uzgodnień — docelowe pliki i zawartość (każdy plik oddzielny blok):
 
 # core/system_info.py
 ```python
@@ -96,7 +93,3 @@ class MainWindow(QMainWindow):
         self.status_timer.timeout.connect(self.ai_status_viewer.refresh_status)
         self.status_timer.start(2000)
 ```
---- KONIEC KODÓW ---
-
-46. Użytkownik: _session: Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): 2025-08-12 14:52:49, Current User's Login: Szyryngo
-...
