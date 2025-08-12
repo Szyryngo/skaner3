@@ -9,7 +9,8 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QComboBox, QLabel, QPushButton, QTextEdit,
-    QTabWidget, QSpinBox
+    QTabWidget, QSpinBox, QLineEdit, QCheckBox,
+    QGroupBox, QGridLayout, QSlider
 )
 
 import matplotlib.pyplot as plt
@@ -36,6 +37,16 @@ class NetworkVisualization(QWidget):
         self._protocol_counts: Dict[str, int] = defaultdict(int)
         self._geo_locations: Dict[str, Dict] = {}  # Cache for geolocation data
         
+        # Filtering state
+        self._active_filters = {
+            'time_range': 300,  # seconds
+            'protocols': set(),  # empty means all protocols
+            'src_ips': set(),    # empty means all IPs  
+            'dst_ips': set(),    # empty means all IPs
+            'threat_level_min': 0.0,  # minimum threat score
+            'threat_level_max': 1.0   # maximum threat score
+        }
+        
         # Time tracking
         self._last_update_time = time.time()
         self._current_second_count = 0
@@ -48,32 +59,86 @@ class NetworkVisualization(QWidget):
         """Initialize the user interface components."""
         layout = QVBoxLayout(self)
         
-        # Control panel
-        controls_layout = QHBoxLayout()
+        # Filter panel
+        filter_group = QGroupBox("Filtry")
+        filter_layout = QGridLayout(filter_group)
         
-        # Time range selector
-        controls_layout.addWidget(QLabel("Zakres czasu:"))
+        # Time range filter
+        filter_layout.addWidget(QLabel("Zakres czasu:"), 0, 0)
         self.time_range_combo = QComboBox()
-        self.time_range_combo.addItems(["1 minuta", "5 minut", "15 minut", "30 minut", "1 godzina"])
+        self.time_range_combo.addItems(["1 minuta", "5 minut", "15 minut", "30 minut", "1 godzina", "6 godzin"])
         self.time_range_combo.setCurrentText("5 minut")
         self.time_range_combo.currentTextChanged.connect(self._on_time_range_changed)
-        controls_layout.addWidget(self.time_range_combo)
+        filter_layout.addWidget(self.time_range_combo, 0, 1)
+        
+        # Protocol filter
+        filter_layout.addWidget(QLabel("Protokoły:"), 0, 2)
+        self.protocol_filter = QLineEdit()
+        self.protocol_filter.setPlaceholderText("TCP,UDP,ICMP (puste = wszystkie)")
+        self.protocol_filter.textChanged.connect(self._on_protocol_filter_changed)
+        filter_layout.addWidget(self.protocol_filter, 0, 3)
+        
+        # Source IP filter
+        filter_layout.addWidget(QLabel("IP źródłowe:"), 1, 0)
+        self.src_ip_filter = QLineEdit()
+        self.src_ip_filter.setPlaceholderText("192.168.1.1,10.0.0.1 (puste = wszystkie)")
+        self.src_ip_filter.textChanged.connect(self._on_src_ip_filter_changed)
+        filter_layout.addWidget(self.src_ip_filter, 1, 1)
+        
+        # Destination IP filter
+        filter_layout.addWidget(QLabel("IP docelowe:"), 1, 2)
+        self.dst_ip_filter = QLineEdit()
+        self.dst_ip_filter.setPlaceholderText("8.8.8.8,1.1.1.1 (puste = wszystkie)")
+        self.dst_ip_filter.textChanged.connect(self._on_dst_ip_filter_changed)
+        filter_layout.addWidget(self.dst_ip_filter, 1, 3)
+        
+        # Threat level filter
+        filter_layout.addWidget(QLabel("Poziom zagrożenia:"), 2, 0)
+        threat_layout = QHBoxLayout()
+        self.threat_min_slider = QSlider(Qt.Horizontal)
+        self.threat_min_slider.setRange(0, 100)
+        self.threat_min_slider.setValue(0)
+        self.threat_min_slider.valueChanged.connect(self._on_threat_filter_changed)
+        self.threat_min_label = QLabel("Min: 0.0")
+        threat_layout.addWidget(self.threat_min_label)
+        threat_layout.addWidget(self.threat_min_slider)
+        
+        self.threat_max_slider = QSlider(Qt.Horizontal)
+        self.threat_max_slider.setRange(0, 100)
+        self.threat_max_slider.setValue(100)
+        self.threat_max_slider.valueChanged.connect(self._on_threat_filter_changed)
+        self.threat_max_label = QLabel("Max: 1.0")
+        threat_layout.addWidget(self.threat_max_label)
+        threat_layout.addWidget(self.threat_max_slider)
+        
+        threat_widget = QWidget()
+        threat_widget.setLayout(threat_layout)
+        filter_layout.addWidget(threat_widget, 2, 1, 1, 2)
+        
+        # Control buttons
+        control_layout = QHBoxLayout()
+        self.apply_filters_btn = QPushButton("Zastosuj filtry")
+        self.apply_filters_btn.clicked.connect(self._apply_filters)
+        self.clear_filters_btn = QPushButton("Wyczyść filtry")
+        self.clear_filters_btn.clicked.connect(self._clear_filters)
+        self.clear_data_btn = QPushButton("Wyczyść dane")
+        self.clear_data_btn.clicked.connect(self._clear_data)
+        control_layout.addWidget(self.apply_filters_btn)
+        control_layout.addWidget(self.clear_filters_btn)
+        control_layout.addWidget(self.clear_data_btn)
         
         # Refresh interval
-        controls_layout.addWidget(QLabel("Odświeżanie (s):"))
+        control_layout.addWidget(QLabel("Odświeżanie (s):"))
         self.refresh_interval_spin = QSpinBox()
         self.refresh_interval_spin.setRange(1, 60)
         self.refresh_interval_spin.setValue(2)
         self.refresh_interval_spin.valueChanged.connect(self._on_refresh_interval_changed)
-        controls_layout.addWidget(self.refresh_interval_spin)
+        control_layout.addWidget(self.refresh_interval_spin)
         
-        # Clear data button
-        self.clear_button = QPushButton("Wyczyść dane")
-        self.clear_button.clicked.connect(self._clear_data)
-        controls_layout.addWidget(self.clear_button)
+        control_layout.addStretch()
+        filter_layout.addLayout(control_layout, 2, 3)
         
-        controls_layout.addStretch()
-        layout.addLayout(controls_layout)
+        layout.addWidget(filter_group)
         
         # Main visualization area
         main_splitter = QSplitter(Qt.Horizontal)
@@ -106,21 +171,49 @@ class NetworkVisualization(QWidget):
         
         main_splitter.addWidget(charts_widget)
         
-        # Right side: Geolocation and stats
+        # Right side: Additional charts and info
         info_widget = QWidget()
         info_layout = QVBoxLayout(info_widget)
         
-        # Protocol distribution chart
+        # Tabs for different chart types
+        chart_tabs = QTabWidget()
+        
+        # Protocol distribution tab
+        protocol_tab = QWidget()
+        protocol_tab_layout = QVBoxLayout(protocol_tab)
         self.protocol_figure = Figure(figsize=(4, 4))
         self.protocol_canvas = FigureCanvas(self.protocol_figure)
         self.protocol_ax = self.protocol_figure.add_subplot(111)
         self.protocol_ax.set_title("Rozkład protokołów")
-        info_layout.addWidget(self.protocol_canvas)
+        protocol_tab_layout.addWidget(self.protocol_canvas)
+        chart_tabs.addTab(protocol_tab, "Protokoły")
+        
+        # Threat level distribution tab
+        threat_tab = QWidget()
+        threat_tab_layout = QVBoxLayout(threat_tab)
+        self.threat_figure = Figure(figsize=(4, 4))
+        self.threat_canvas = FigureCanvas(self.threat_figure)
+        self.threat_ax = self.threat_figure.add_subplot(111)
+        self.threat_ax.set_title("Rozkład poziomów zagrożenia")
+        threat_tab_layout.addWidget(self.threat_canvas)
+        chart_tabs.addTab(threat_tab, "Zagrożenia")
+        
+        # Top IPs tab
+        ips_tab = QWidget()
+        ips_tab_layout = QVBoxLayout(ips_tab)
+        self.ips_figure = Figure(figsize=(4, 4))
+        self.ips_canvas = FigureCanvas(self.ips_figure)
+        self.ips_ax = self.ips_figure.add_subplot(111)
+        self.ips_ax.set_title("Najaktywniejsze IP")
+        ips_tab_layout.addWidget(self.ips_canvas)
+        chart_tabs.addTab(ips_tab, "Top IP")
+        
+        info_layout.addWidget(chart_tabs)
         
         # Geolocation info
         info_layout.addWidget(QLabel("Informacje geolokalizacyjne:"))
         self.geo_text = QTextEdit()
-        self.geo_text.setMaximumHeight(200)
+        self.geo_text.setMaximumHeight(150)
         self.geo_text.setReadOnly(True)
         info_layout.addWidget(self.geo_text)
         
@@ -159,16 +252,19 @@ class NetworkVisualization(QWidget):
         """Collect network traffic data for the current second."""
         current_time = time.time()
         
-        # Count packets and bytes in the last second
+        # Get filtered packets for counting
+        filtered_packets = self._get_filtered_packets()
+        
+        # Count packets and bytes in the last second from filtered data
         packets_count = 0
         bytes_count = 0
         
-        for packet in self._packets_buffer:
+        for packet in filtered_packets:
             if packet.timestamp >= self._last_update_time:
                 packets_count += 1
                 bytes_count += packet.length
                 
-                # Update protocol counts
+                # Update protocol counts (only from filtered data)
                 self._protocol_counts[packet.protocol] += 1
         
         # Store data point
@@ -183,6 +279,8 @@ class NetworkVisualization(QWidget):
         self._update_traffic_chart()
         self._update_size_chart()
         self._update_protocol_chart()
+        self._update_threat_chart()
+        self._update_ips_chart()
         self._update_geolocation_info()
         self._update_network_stats()
         
@@ -288,13 +386,24 @@ class NetworkVisualization(QWidget):
         
     def _update_protocol_chart(self) -> None:
         """Update the protocol distribution pie chart."""
-        if not self._protocol_counts:
+        # Use filtered data for protocol counts
+        filtered_packets = self._get_filtered_packets()
+        protocol_counts = defaultdict(int)
+        
+        for packet in filtered_packets:
+            protocol_counts[packet.protocol] += 1
+            
+        if not protocol_counts:
+            self.protocol_ax.clear()
+            self.protocol_ax.text(0.5, 0.5, 'Brak danych', 
+                                ha='center', va='center', transform=self.protocol_ax.transAxes)
+            self.protocol_canvas.draw()
             return
             
         self.protocol_ax.clear()
         
-        protocols = list(self._protocol_counts.keys())
-        counts = list(self._protocol_counts.values())
+        protocols = list(protocol_counts.keys())
+        counts = list(protocol_counts.values())
         
         # Only show top 6 protocols
         if len(protocols) > 6:
@@ -317,13 +426,123 @@ class NetworkVisualization(QWidget):
         self.protocol_figure.tight_layout()
         self.protocol_canvas.draw()
         
-    def _update_geolocation_info(self) -> None:
-        """Update geolocation information text."""
-        if not self._packets_buffer:
+    def _update_threat_chart(self) -> None:
+        """Update the threat level distribution chart."""
+        filtered_packets = self._get_filtered_packets()
+        
+        if not filtered_packets:
+            self.threat_ax.clear()
+            self.threat_ax.text(0.5, 0.5, 'Brak danych', 
+                              ha='center', va='center', transform=self.threat_ax.transAxes)
+            self.threat_canvas.draw()
             return
             
-        # Get unique IPs from recent packets (last 100)
-        recent_packets = self._packets_buffer[-100:] if len(self._packets_buffer) > 100 else self._packets_buffer
+        # Collect threat scores
+        threat_scores = []
+        for packet in filtered_packets:
+            score = getattr(packet, 'ai_score', 0.0)
+            threat_scores.append(score)
+            
+        if not threat_scores:
+            self.threat_ax.clear()
+            self.threat_ax.text(0.5, 0.5, 'Brak danych o zagrożeniach', 
+                              ha='center', va='center', transform=self.threat_ax.transAxes)
+            self.threat_canvas.draw()
+            return
+            
+        self.threat_ax.clear()
+        
+        # Create histogram of threat levels
+        bins = [0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+        labels = ['Bardzo niski', 'Niski', 'Średni', 'Podwyższony', 'Wysoki', 'Krytyczny']
+        colors = ['green', 'lightgreen', 'yellow', 'orange', 'red', 'darkred']
+        
+        hist, _ = np.histogram(threat_scores, bins=bins)
+        
+        # Create bar chart
+        x_pos = range(len(labels))
+        bars = self.threat_ax.bar(x_pos, hist, color=colors, alpha=0.7)
+        
+        self.threat_ax.set_title("Rozkład poziomów zagrożenia")
+        self.threat_ax.set_xlabel("Poziom zagrożenia")
+        self.threat_ax.set_ylabel("Liczba pakietów")
+        self.threat_ax.set_xticks(x_pos)
+        self.threat_ax.set_xticklabels(labels, rotation=45, ha='right')
+        
+        # Add value labels on bars
+        for bar, count in zip(bars, hist):
+            if count > 0:
+                self.threat_ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
+                                  str(count), ha='center', va='bottom')
+        
+        self.threat_figure.tight_layout()
+        self.threat_canvas.draw()
+        
+    def _update_ips_chart(self) -> None:
+        """Update the top IPs chart."""
+        filtered_packets = self._get_filtered_packets()
+        
+        if not filtered_packets:
+            self.ips_ax.clear()
+            self.ips_ax.text(0.5, 0.5, 'Brak danych', 
+                           ha='center', va='center', transform=self.ips_ax.transAxes)
+            self.ips_canvas.draw()
+            return
+            
+        # Count IP occurrences (both source and destination)
+        ip_counts = defaultdict(int)
+        for packet in filtered_packets:
+            if packet.src_ip and packet.src_ip != "?":
+                ip_counts[packet.src_ip] += 1
+            if packet.dst_ip and packet.dst_ip != "?":
+                ip_counts[packet.dst_ip] += 1
+                
+        if not ip_counts:
+            self.ips_ax.clear()
+            self.ips_ax.text(0.5, 0.5, 'Brak danych IP', 
+                           ha='center', va='center', transform=self.ips_ax.transAxes)
+            self.ips_canvas.draw()
+            return
+            
+        self.ips_ax.clear()
+        
+        # Get top 10 IPs
+        top_ips = sorted(ip_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        if top_ips:
+            ips, counts = zip(*top_ips)
+            
+            # Create horizontal bar chart
+            y_pos = range(len(ips))
+            bars = self.ips_ax.barh(y_pos, counts, color='skyblue', alpha=0.7)
+            
+            self.ips_ax.set_title("Najaktywniejsze adresy IP")
+            self.ips_ax.set_xlabel("Liczba pakietów")
+            self.ips_ax.set_yticks(y_pos)
+            
+            # Truncate long IP addresses for better display
+            display_ips = [ip[:15] + '...' if len(ip) > 15 else ip for ip in ips]
+            self.ips_ax.set_yticklabels(display_ips)
+            
+            # Add value labels on bars
+            for bar, count in zip(bars, counts):
+                self.ips_ax.text(bar.get_width() + max(counts) * 0.01, 
+                               bar.get_y() + bar.get_height()/2,
+                               str(count), ha='left', va='center')
+        
+        self.ips_figure.tight_layout()
+        self.ips_canvas.draw()
+        
+    def _update_geolocation_info(self) -> None:
+        """Update geolocation information text."""
+        filtered_packets = self._get_filtered_packets()
+        
+        if not filtered_packets:
+            self.geo_text.setPlainText("Brak danych do wyświetlenia")
+            return
+            
+        # Get unique IPs from filtered packets (last 100)
+        recent_packets = filtered_packets[-100:] if len(filtered_packets) > 100 else filtered_packets
         unique_ips = set()
         
         for packet in recent_packets:
@@ -346,15 +565,18 @@ class NetworkVisualization(QWidget):
         
     def _update_network_stats(self) -> None:
         """Update network statistics text."""
-        if not self._packets_buffer:
+        filtered_packets = self._get_filtered_packets()
+        
+        if not filtered_packets:
+            self.stats_text.setPlainText("Brak danych do wyświetlenia")
             return
             
-        total_packets = len(self._packets_buffer)
-        total_bytes = sum(p.length for p in self._packets_buffer)
+        total_packets = len(filtered_packets)
+        total_bytes = sum(p.length for p in filtered_packets)
         
-        # Calculate rates from recent data
+        # Calculate rates from recent filtered data
         current_time = time.time()
-        recent_packets = [p for p in self._packets_buffer if current_time - p.timestamp <= 60]  # Last minute
+        recent_packets = [p for p in filtered_packets if current_time - p.timestamp <= 60]  # Last minute
         
         if recent_packets:
             packets_per_minute = len(recent_packets)
@@ -364,13 +586,28 @@ class NetworkVisualization(QWidget):
             packets_per_minute = 0
             bytes_per_minute = 0
             avg_packet_size = 0
+            
+        # Count unique protocols in filtered data
+        unique_protocols = set(p.protocol for p in filtered_packets)
         
-        stats_text = f"""Łączna liczba pakietów: {total_packets}
+        # Count threat levels
+        high_threat_count = sum(1 for p in filtered_packets 
+                              if getattr(p, 'ai_score', 0.0) > 0.7)
+        
+        stats_text = f"""Filtrowane pakiety: {total_packets}
 Łączny rozmiar danych: {total_bytes:,} bajtów ({total_bytes / 1024 / 1024:.2f} MB)
 Pakiety/minutę: {packets_per_minute}
 Bajty/minutę: {bytes_per_minute:,}
 Średni rozmiar pakietu: {avg_packet_size:.1f} bajtów
-Unikalne protokoły: {len(self._protocol_counts)}"""
+Unikalne protokoły: {len(unique_protocols)}
+Pakiety wysokiego ryzyka: {high_threat_count}
+
+Aktywne filtry:
+- Zakres czasu: {self._active_filters['time_range']}s
+- Protokoły: {', '.join(self._active_filters['protocols']) or 'wszystkie'}
+- IP źródłowe: {', '.join(self._active_filters['src_ips']) or 'wszystkie'}
+- IP docelowe: {', '.join(self._active_filters['dst_ips']) or 'wszystkie'}
+- Zagrożenie: {self._active_filters['threat_level_min']:.2f} - {self._active_filters['threat_level_max']:.2f}"""
         
         self.stats_text.setPlainText(stats_text)
         
@@ -382,15 +619,144 @@ Unikalne protokoły: {len(self._protocol_counts)}"""
             "5 minut": 300,
             "15 minut": 900,
             "30 minut": 1800,
-            "1 godzina": 3600
+            "1 godzina": 3600,
+            "6 godzin": 21600
         }
         
         seconds = range_map.get(range_text, 300)
+        self._active_filters['time_range'] = seconds
         max_points = seconds  # One point per second
         
         # Update deque max length
         self._traffic_history = deque(self._traffic_history, maxlen=max_points)
         self._packet_size_history = deque(self._packet_size_history, maxlen=max_points)
+        
+        # Apply filters and update visualizations
+        self._apply_filters()
+        
+    def _on_protocol_filter_changed(self, text: str) -> None:
+        """Handle protocol filter change."""
+        if text.strip():
+            protocols = {p.strip().upper() for p in text.split(',') if p.strip()}
+            self._active_filters['protocols'] = protocols
+        else:
+            self._active_filters['protocols'] = set()
+        # Auto-apply filters on change
+        self._apply_filters()
+        
+    def _on_src_ip_filter_changed(self, text: str) -> None:
+        """Handle source IP filter change."""
+        if text.strip():
+            ips = {ip.strip() for ip in text.split(',') if ip.strip()}
+            self._active_filters['src_ips'] = ips
+        else:
+            self._active_filters['src_ips'] = set()
+        # Auto-apply filters on change
+        self._apply_filters()
+        
+    def _on_dst_ip_filter_changed(self, text: str) -> None:
+        """Handle destination IP filter change."""
+        if text.strip():
+            ips = {ip.strip() for ip in text.split(',') if ip.strip()}
+            self._active_filters['dst_ips'] = ips
+        else:
+            self._active_filters['dst_ips'] = set()
+        # Auto-apply filters on change
+        self._apply_filters()
+        
+    def _on_threat_filter_changed(self) -> None:
+        """Handle threat level filter change."""
+        min_val = self.threat_min_slider.value() / 100.0
+        max_val = self.threat_max_slider.value() / 100.0
+        
+        # Ensure min <= max
+        if min_val > max_val:
+            if self.sender() == self.threat_min_slider:
+                self.threat_max_slider.setValue(int(min_val * 100))
+                max_val = min_val
+            else:
+                self.threat_min_slider.setValue(int(max_val * 100))
+                min_val = max_val
+        
+        self._active_filters['threat_level_min'] = min_val
+        self._active_filters['threat_level_max'] = max_val
+        
+        # Update labels
+        self.threat_min_label.setText(f"Min: {min_val:.2f}")
+        self.threat_max_label.setText(f"Max: {max_val:.2f}")
+        
+        # Auto-apply filters on change
+        self._apply_filters()
+        
+    def _apply_filters(self) -> None:
+        """Apply current filters and update all visualizations."""
+        # Force immediate update of visualizations with current filters
+        self._update_visualizations()
+        
+    def _clear_filters(self) -> None:
+        """Clear all filters and reset to default state."""
+        # Reset filter controls
+        self.protocol_filter.clear()
+        self.src_ip_filter.clear()
+        self.dst_ip_filter.clear()
+        self.threat_min_slider.setValue(0)
+        self.threat_max_slider.setValue(100)
+        
+        # Reset filter state
+        self._active_filters = {
+            'time_range': 300,
+            'protocols': set(),
+            'src_ips': set(),
+            'dst_ips': set(),
+            'threat_level_min': 0.0,
+            'threat_level_max': 1.0
+        }
+        
+        # Update labels
+        self.threat_min_label.setText("Min: 0.0")
+        self.threat_max_label.setText("Max: 1.0")
+        
+        # Apply cleared filters
+        self._apply_filters()
+        
+    def _get_filtered_packets(self) -> List[PacketInfo]:
+        """Get packets that match current filter criteria."""
+        if not self._packets_buffer:
+            return []
+            
+        current_time = time.time()
+        time_cutoff = current_time - self._active_filters['time_range']
+        
+        filtered = []
+        for packet in self._packets_buffer:
+            # Time filter
+            if packet.timestamp < time_cutoff:
+                continue
+                
+            # Protocol filter
+            if (self._active_filters['protocols'] and 
+                packet.protocol.upper() not in self._active_filters['protocols']):
+                continue
+                
+            # Source IP filter
+            if (self._active_filters['src_ips'] and 
+                packet.src_ip not in self._active_filters['src_ips']):
+                continue
+                
+            # Destination IP filter  
+            if (self._active_filters['dst_ips'] and
+                packet.dst_ip not in self._active_filters['dst_ips']):
+                continue
+                
+            # Threat level filter (requires AI score from packet)
+            threat_score = getattr(packet, 'ai_score', 0.0)
+            if (threat_score < self._active_filters['threat_level_min'] or
+                threat_score > self._active_filters['threat_level_max']):
+                continue
+                
+            filtered.append(packet)
+            
+        return filtered
         
     def _on_refresh_interval_changed(self, interval: int) -> None:
         """Handle refresh interval change."""
@@ -407,10 +773,14 @@ Unikalne protokoły: {len(self._protocol_counts)}"""
         self.traffic_ax.clear()
         self.size_ax.clear()
         self.protocol_ax.clear()
+        self.threat_ax.clear()
+        self.ips_ax.clear()
         
         self.traffic_canvas.draw()
         self.size_canvas.draw()
         self.protocol_canvas.draw()
+        self.threat_canvas.draw()
+        self.ips_canvas.draw()
         
         # Clear text areas
         self.geo_text.clear()

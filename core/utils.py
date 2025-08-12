@@ -32,6 +32,7 @@ class PacketInfo:
     protocol: str
     length: int
     raw_bytes: Optional[bytes] = None
+    ai_score: float = 0.0  # AI anomaly score for threat level filtering
 
 
 def is_scapy_available() -> bool:

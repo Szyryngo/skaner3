@@ -362,13 +362,16 @@ class MainWindow(QMainWindow):
         self._enforce_row_limit()
 
     def _handle_packet(self, packet_info: PacketInfo) -> None:
-        # Zachowaj kolejność: od najstarszego do najnowszego
-        self._packets_buffer.append(packet_info)
-        row = packetinfo_to_row(packet_info)
-        
         # Analiza AI przed dodaniem do UI
         ai = self.ai_engine.analyze_packet(packet_info)
         score = float(ai.get("score", 0.0))
+        
+        # Set AI score on packet for filtering
+        packet_info.ai_score = score
+        
+        # Zachowaj kolejność: od najstarszego do najnowszego
+        self._packets_buffer.append(packet_info)
+        row = packetinfo_to_row(packet_info)
         
         # Dodaj pakiet z kolorowaniem według score
         self.packet_viewer.add_packet_row(row, score=score)
