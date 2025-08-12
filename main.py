@@ -8,6 +8,11 @@ from ui.main_window import MainWindow
 
 
 def main() -> int:
+    """Punkt wejścia aplikacji - uruchamia główne okno GUI.
+    
+    Returns:
+        Kod wyjścia aplikacji PyQt5
+    """
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

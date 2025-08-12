@@ -14,7 +14,11 @@ from .utils import PacketInfo, is_scapy_available, make_fake_packet, packet_from
 
 
 class PacketSniffer:
-    """Sniffer pakietów z dwoma trybami pracy: scapy i symulacja."""
+    """Sniffer pakietów z dwoma trybami pracy: scapy i symulacja.
+    
+    Umożliwia przechwytywanie pakietów sieciowych z rzeczywistego interfejsu
+    lub generowanie sztucznych pakietów do celów testowych/demonstracyjnych.
+    """
 
     def __init__(
         self,
@@ -24,6 +28,15 @@ class PacketSniffer:
         bpf_filter: Optional[str] = None,
         interval_seconds: float = 0.2,
     ) -> None:
+        """Inicjalizuje sniffer pakietów z określonymi parametrami.
+        
+        Args:
+            packet_queue: Kolejka do której będą dodawane przechwycone pakiety
+            use_simulation: Czy wymusić tryb symulacji zamiast rzeczywistego sniffingu
+            interface: Nazwa interfejsu sieciowego (None = domyślny)
+            bpf_filter: Filtr BPF dla ograniczenia przechwytywanych pakietów
+            interval_seconds: Interwał między pakietami w trybie symulacji
+        """
         self.packet_queue = packet_queue
         self.use_simulation = use_simulation or not is_scapy_available()
         self.interface = interface
@@ -35,6 +48,11 @@ class PacketSniffer:
         self._sniffer = None
 
     def start(self) -> None:
+        """Rozpoczyna przechwytywanie pakietów.
+        
+        Automatycznie wybiera tryb scapy lub symulacji w zależności
+        od dostępności bibliotek i konfiguracji.
+        """
         if self._running:
             return
         self._running = True
@@ -45,6 +63,10 @@ class PacketSniffer:
             self._start_simulation_thread()
 
     def stop(self) -> None:
+        """Zatrzymuje przechwytywanie pakietów i zwalnia zasoby.
+        
+        Bezpiecznie zamyka sniffery i wątki z timeout 2 sekund.
+        """
         self._running = False
 
         if self._sniffer is not None:
@@ -60,6 +82,10 @@ class PacketSniffer:
 
     # --- Tryb scapy ---
     def _start_scapy_sniffer(self) -> None:
+        """Uruchamia rzeczywisty sniffer używając biblioteki scapy.
+        
+        W przypadku błędu automatycznie przełącza na tryb symulacji.
+        """
         def on_packet(scapy_packet: object) -> None:
             info = packet_from_scapy(scapy_packet)
             if info is not None:
@@ -81,6 +107,10 @@ class PacketSniffer:
 
     # --- Tryb symulacji ---
     def _start_simulation_thread(self) -> None:
+        """Uruchamia wątek generujący sztuczne pakiety dla demonstracji.
+        
+        Generuje pakiety w regularnych odstępach określonych przez interval_seconds.
+        """
         def run() -> None:
             while self._running:
                 packet = make_fake_packet()
