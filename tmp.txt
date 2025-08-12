@@ -1,3 +1,5 @@
+Punkt pierwszy najważniejszy i nie usuwalny nawet podczas aktualizacji pliku: Ten plik jest po to by ci przypomnieć co robiliśmy w poprzednich sesjach. Dostajesz dostę do repozytorium skaner3 z możliwością odczytywania, mpodyfikowania i dodawania nowych plików. Wszystko tak by nie naruszać integralności programu i by go nie popsuć.
+
 50. Struktura katalogów i plików repozytorium (stan na 2025-08-12):
 
 /  
