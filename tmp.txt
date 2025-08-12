@@ -8,7 +8,7 @@ skaner3/
 │   └── (zawartość niedostępna; katalog GitHub, np. workflow CI/CD)
 │
 ├── __pycache__/
-│   └── main.cpython-313.pyc  # Skopilowane pliki Pythona (cache)
+│   └── main.cpython-313.pyc  # Plik cache Pythona – skompilowana wersja main.py dla Pythona 3.13
 │
 ├── core/
 │   ├── __init__.py           # Inicjalizuje moduł core
@@ -19,7 +19,7 @@ skaner3/
 ├── tests/
 │   ├── __pycache__/
 │   │   ├── test_ai_engine.cpython-313.pyc
-│   │   ├── test_sample.cpython-313.pyc
+│   │   ├��─ test_sample.cpython-313.pyc
 │   │   └── test_utils.cpython-313.pyc
 │   ├── test_ai_engine.py     # Testy jednostkowe dla ai_engine.py
 │   ├── test_sample.py        # Testy jednostkowe dla sample.py
