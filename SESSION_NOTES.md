@@ -73,12 +73,16 @@ Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagr
 - [x] Lepsze wizualne rozróżnienie poziomów zagrożenia (czerwony/pomarańczowy/żółty/zielony)
 - [x] Pogrubione czcionki dla wysokich zagrożeń
 
-### 🔧 Naprawione błędy (v0.3.0)
-- [x] Błąd z niezdefiniowaną zmienną `decision` w `AIEngine`
-- [x] Brakujące importy `from collections import deque`
-- [x] Niespójności w konfiguracji export (brakujące pola)
-- [x] Błąd składni w `export_packets` (walrus operator)
-- [x] Brakujące pola w `_setup_loggers` i `import_config`
+### ✅ Nowe funkcjonalności / zmiany (v0.3.x)
+- [x] Dodano moduł `core/system_info.py` – zaawansowany zbieracz informacji o systemie operacyjnym, CPU, RAM i dysku (psutil).
+- [x] Wydzielono pełny sniffer pakietów do `core/packet_sniffer.py` – obsługa trybu scapy i symulacji, zasilanie kolejki pakietów.
+- [x] Rozbudowano `utils.py` o generację losowych pakietów do testów, formatowanie timestampów, konwersję z obiektów scapy.
+- [x] Dodano komponent UI do wizualizacji sieci: `network_visualization.py` (tab "Wizualizacja" w main_window.py), przekazywanie bufora pakietów do wizualizacji.
+- [x] W `config_dialog.py` – kolorowanie i emoji dla typów interfejsów sieciowych.
+- [x] Przekazywanie bufora pakietów do AlertViewer i NetworkVisualization w main_window.
+- [x] Szczegółowy widok geolokalizacji w main_window.
+- [x] Usprawnienia w kolorowaniu poziomów alertów i pakietów w UI (kolorowanie wierszy/tła zależnie od score ML).
+- [x] Nowe funkcje monitorowania zasobów systemowych (CPU/RAM/dysk) w GUI.
 
 ## Aktualny stan
 
@@ -93,6 +97,7 @@ Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagr
 - ✅ `core/__init__.py` - nazwa i wersja aplikacji
 - ✅ `core/ai_engine.py` - silnik AI z ML (IsolationForest + Half-Space Trees)
 - ✅ `core/packet_sniffer.py` - przechwytywanie pakietów (scapy/symulacja)
+- ✅ `core/system_info.py` - monitorowanie zasobów systemowych
 - ✅ `core/rules.py` - reguły bezpieczeństwa
 - ✅ `core/utils.py` - narzędzia pomocnicze, geolokalizacja, LogWriter
 - ✅ `ui/main_window.py` - główne okno aplikacji
@@ -100,6 +105,7 @@ Stworzenie inteligentnego sniffera sieciowego z AI do wykrywania anomalii i zagr
 - ✅ `ui/alert_viewer.py` - widok alertów
 - ✅ `ui/config_dialog.py` - dialog konfiguracji
 - ✅ `ui/ai_status_viewer.py` - status AI
+- ✅ `ui/network_visualization.py` - wizualizacja ruchu sieciowego
 - ✅ `main.py` - punkt wejścia
 - ✅ `tests/test_ai_engine.py` - testy AIEngine
 - ✅ `tests/test_utils.py` - testy utils
