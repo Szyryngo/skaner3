@@ -28,6 +28,42 @@ AI Network Sniffer to inteligentny sniffer sieciowy z wbudowanym silnikiem AI do
 - Geolokalizacja adresów IP
 - Testy jednostkowe
 
+## Dodatkowe funkcjonalności
+
+- **Zaawansowany skaner sieci:**  
+  - Wbudowana zakładka "Skaner sieci" w GUI umożliwia szybkie skanowanie hostów i portów w sieci lokalnej.
+  - Obsługa dwóch trybów skanowania: lekki (ARP/ICMP) oraz twardy (pełny TCP scan).
+  - Konfigurowalny zakres IP i portów, asynchroniczne skanowanie (nie blokuje GUI).
+  - Prezentacja wyników na żywo, możliwość zatrzymania skanowania.
+  - Automatyczne wykrywanie zakresu sieci na podstawie interfejsu.
+  - Lista wykrytych hostów, status, otwarte porty, hostname (jeśli możliwe).
+
+- **Wizualizacja ruchu sieciowego:**  
+  - Dynamiczne wykresy i mapy prezentujące przepływ danych oraz aktywność protokołów.
+  - Dashboard z metrykami ruchu i alarmów.
+
+- **Zaawansowana konfiguracja:**  
+  - Możliwość edycji reguł bezpieczeństwa i parametrów AI bezpośrednio z poziomu GUI.
+  - Eksport i import konfiguracji oraz wyników skanowania/analityki.
+
+- **Obsługa wielu interfejsów sieciowych jednocześnie:**  
+  - Przełączanie monitoringu oraz skanowania pomiędzy różnymi kartami sieciowymi.
+  - Podgląd statusu wszystkich dostępnych interfejsów.
+
+- **Integracja z systemami zewnętrznymi:**  
+  - Możliwość eksportu logów i alertów do syslog, Windows Event Log.
+  - Przygotowanie pod integrację z SIEM oraz eksport do formatu kompatybilnego z narzędziami bezpieczeństwa.
+
+- **Testy jednostkowe i automatyczne CI/CD:**  
+  - Rozbudowany zestaw testów jednostkowych pokrywających kluczowe komponenty.
+  - Zautomatyzowane workflow CI/CD w GitHub Actions.
+
+Więcej szczegółów oraz pełny opis architektury znajdziesz w plikach:  
+- [STRUKTURA_PROJEKTU.md](STRUKTURA_PROJEKTU.md)  
+- [SESSION_NOTES.md](SESSION_NOTES.md)  
+- [BUGS_AND_FIXES.md](BUGS_AND_FIXES.md)  
+- [STRUKTURA_KATALOGÓW.md](STRUKTURA_KATALOGÓW.md)  
+
 ## Wymagania
 - Python 3.10+ (zalecany 3.13)
 - PyQt5
