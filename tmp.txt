@@ -1,4 +1,4 @@
-Punkt pierwszy najważniejszy i nie usuwalny nawet podczas aktualizacji pliku: Ten plik jest po to by ci przypomnieć co robiliśmy w poprzednich sesjach. Dostajesz dostę do repozytorium skaner[...]  
+Punkt pierwszy najważniejszy i nie usuwalny nawet podczas aktualizacji pliku: Ten plik jest po to by ci przypomnieć co robiliśmy w poprzednich sesjach. Dostajesz dostęp do repozytorium skaner[...]  
 
 50. Struktura katalogów i plików repozytorium (stan na 2025-08-12):
 
@@ -84,42 +84,42 @@ Każdy z tych plików i katalogów pełni określoną funkcję:
 51. Struktura katalogów i plików repozytorium (pełny skan, stan na 2025-08-13):
 
 .
-├── .github/
-│   └── workflows/
-│       └── python-app.yml
-├── __pycache__/
-├── core/
-│   ├── __init__.py
-│   ├── ai_engine.py
-│   ├── sample.py
-│   ├── system_info.py
-│   └── utils.py
-├── tests/
-│   ├── __init__.py
-│   ├── test_ai_engine.py
-│   ├── test_sample.py
-│   └── test_utils.py
-├── ui/
-│   ├── __init__.py
-│   ├── ai_status_viewer.py
-│   ├── alert_viewer.py
-│   ├── config_dialog.py
-│   ├── main_window.py
-│   ├── network_visualization.py
-│   └── system_status_viewer.py
-├── .gitignore
-├── BUGS_AND_FIXES.md
-├── README.md
-├── SESSION_NOTES.md
-├── STRUKTURA_KATALOGÓW.md
-├── STRUKTURA_PROJEKTU.md
-├── create_demo_images.py
-├── demo_visualization.py
-├── main.py
-├── network_visualization_demo.png
-├── network_visualization_layout.png
-├── requirements.txt
-└── tmp.txt
+├── .github/                  # Katalog na pliki konfiguracyjne GitHub (Actions, szablony PR/Issue)
+│   └── workflows/            # Katalog na workflow CI/CD GitHub Actions
+│       └── python-app.yml    # Workflow automatycznych testów/aplikacji Python
+├── __pycache__/              # Pliki cache Pythona (.pyc)
+├── core/                     # Główna logika aplikacji
+│   ├── __init__.py           # Inicjalizacja modułu core
+│   ├── ai_engine.py          # Logika i algorytmy sztucznej inteligencji
+│   ├── sample.py             # Przykładowe dane/procesy do testów lub demonstracji
+│   ├── system_info.py        # Zbieranie/zarządzanie informacjami o systemie
+│   └── utils.py              # Funkcje pomocnicze dla core
+├── tests/                    # Testy jednostkowe/integracyjne
+│   ├── __init__.py           # Inicjalizacja modułu tests
+│   ├── test_ai_engine.py     # Testy jednostkowe dla ai_engine.py
+│   ├── test_sample.py        # Testy jednostkowe dla sample.py
+│   └── test_utils.py         # Testy jednostkowe dla utils.py
+├── ui/                       # Interfejs użytkownika (UI)
+│   ├── __init__.py           # Inicjalizacja modułu ui
+│   ├── ai_status_viewer.py   # Komponent UI do podglądu statusu AI
+│   ├── alert_viewer.py       # Komponent UI do wyświetlania alertów
+│   ├── config_dialog.py      # Okno dialogowe konfiguracji aplikacji
+│   ├── main_window.py        # Główne okno aplikacji
+│   ├── network_visualization.py      # Wizualizacja sieci w UI
+│   └── system_status_viewer.py      # Podgląd statusu systemu w UI
+├── .gitignore                # Lista plików/katalogów ignorowanych przez git
+├── BUGS_AND_FIXES.md         # Lista znanych błędów i poprawek
+├── README.md                 # Opis projektu, instrukcje uruchomienia/użytkowania
+├── SESSION_NOTES.md          # Notatki z sesji programistycznych
+├── STRUKTURA_KATALOGÓW.md    # Struktura katalogów i opis plików
+├── STRUKTURA_PROJEKTU.md     # Dokumentacja architektury projektu
+├── create_demo_images.py     # Skrypt do generowania przykładowych obrazów/demo
+├── demo_visualization.py     # Demo/wizualizacja działania projektu
+├── main.py                   # Główny plik uruchamiający aplikację
+├── network_visualization_demo.png   # Przykładowy obraz wizualizacji sieci
+├── network_visualization_layout.png # Obraz z layoutem dla wizualizacji sieci
+├── requirements.txt          # Lista wymaganych bibliotek Pythona
+└── tmp.txt                   # Archiwum, historia zmian i struktury repozytorium
 
 Uwaga: powyższa struktura została automatycznie zeskanowana przez narzędzie Copilot w dniu 2025-08-13 i obejmuje wszystkie katalogi oraz pliki, włącznie z podkatalogami.
 
