@@ -119,7 +119,8 @@ class NetworkDevicesViewer(QWidget):
         
         if device is None:
             # Nowe urządzenie
-            mac_address = packet_info.src_mac if is_source else packet_info.dst_mac
+            # Tylko używaj MAC address dla pakietów źródłowych - są bardziej wiarygodne
+            mac_address = packet_info.src_mac if is_source else ""
             hostname = resolve_hostname(ip_address) if ip_address != resolve_hostname(ip_address) else ip_address
             oui_vendor = get_oui_vendor(mac_address) if mac_address else ""
             user_agent = packet_info.user_agent if is_source else ""
@@ -141,6 +142,7 @@ class NetworkDevicesViewer(QWidget):
         device.last_seen = current_time
         
         # Aktualizuj informacje o urządzeniu jeśli dostępne i nie były wcześniej ustawione
+        # Tylko dla pakietów źródłowych, bo te mają wiarygodne informacje
         if is_source:
             if packet_info.src_mac and not device.mac_address:
                 device.mac_address = packet_info.src_mac
