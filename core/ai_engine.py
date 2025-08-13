@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 from collections import deque
+import logging
+import time
 
 import numpy as np
 
@@ -39,6 +41,17 @@ class AIEngine:
         stream_z_threshold: float = 2.5,
         combined_threshold: float = 0.7,
     ) -> None:
+        start_time = time.perf_counter()
+        
+        # Setup logger
+        self.logger = logging.getLogger("skaner3.ai_engine")
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+            # Don't set logger level here - respect parent/root logger level
+        
         self.large_packet_threshold = large_packet_threshold
         self.ml_enabled = ml_enabled and SKLEARN_AVAILABLE
         self.ml_contamination = ml_contamination
@@ -61,6 +74,10 @@ class AIEngine:
         self._stream_m2: float = 0.0
         self._last_stream_score: Optional[float] = None
         self._last_stream_z: Optional[float] = None
+        
+        # Log initialization time
+        init_time_ms = (time.perf_counter() - start_time) * 1000
+        self.logger.info(f"AIEngine initialized in {init_time_ms:.2f}ms (ML: {self.ml_enabled}, Stream: {self.ml_stream_enabled})")
 
     # --- Feature engineering ---
     @staticmethod
@@ -112,7 +129,8 @@ class AIEngine:
         self._model.fit(X)
 
     # --- Public API ---
-    def analyze_packet(self, packet: PacketInfo) -> Dict[str, object]:
+    def _analyze_packet_impl(self, packet: PacketInfo) -> Dict[str, object]:
+        """Internal implementation of packet analysis without logging."""
         reasons: List[str] = []
 
         # Heurystyka bazowa
@@ -197,6 +215,15 @@ class AIEngine:
             "reasons": reasons,
             "combined_score": round(float(combined_score if combined_score is not None else heuristic_score), 3),
         }
+
+    def analyze_packet(self, packet: PacketInfo) -> Dict[str, object]:
+        """Analyze a packet for anomalies with performance logging."""
+        start_time = time.perf_counter()
+        result = self._analyze_packet_impl(packet)
+        analysis_time_ms = (time.perf_counter() - start_time) * 1000
+        
+        self.logger.debug(f"Packet analysis completed in {analysis_time_ms:.2f}ms (anomaly: {result['is_anomaly']})")
+        return result
 
     def get_status(self) -> Dict[str, object]:
         return {
