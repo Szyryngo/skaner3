@@ -221,12 +221,33 @@ class NetworkScannerTab(QWidget):
     def _start_scan(self):
         """Start network scan."""
         # Validate input
-        if not self.ip_range_edit.text().strip():
+        ip_range = self.ip_range_edit.text().strip()
+        if not ip_range:
             self.status_label.setText("Błąd: Wprowadź zakres IP")
             return
             
+        # Validate IP range format
+        try:
+            if '/' in ip_range:
+                # CIDR format
+                from ipaddress import IPv4Network
+                IPv4Network(ip_range, strict=False)
+            elif '-' in ip_range:
+                # Range format
+                from ipaddress import IPv4Address
+                start_ip, end_ip = ip_range.split('-', 1)
+                IPv4Address(start_ip.strip())
+                IPv4Address(end_ip.strip())
+            else:
+                # Single IP
+                from ipaddress import IPv4Address
+                IPv4Address(ip_range)
+        except Exception as e:
+            self.status_label.setText(f"Błąd: Nieprawidłowy zakres IP ({str(e)})")
+            return
+            
         # Configure scanner
-        self.scanner.ip_range = self.ip_range_edit.text().strip()
+        self.scanner.ip_range = ip_range
         self.scanner.port_range = self.port_range_edit.text().strip()
         self.scanner.scan_mode = self.scan_mode_combo.currentText()
         self.scanner.max_threads = self.max_threads_spin.value()

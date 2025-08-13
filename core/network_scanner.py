@@ -112,12 +112,15 @@ class NetworkScanner:
             if '-' in part:
                 try:
                     start, end = map(int, part.split('-', 1))
-                    ports.extend(range(start, end + 1))
+                    if 1 <= start <= 65535 and 1 <= end <= 65535 and start <= end:
+                        ports.extend(range(start, min(end + 1, 65536)))
                 except ValueError:
                     pass
             else:
                 try:
-                    ports.append(int(part))
+                    port = int(part)
+                    if 1 <= port <= 65535:
+                        ports.append(port)
                 except ValueError:
                     pass
         
@@ -254,14 +257,25 @@ class NetworkScanner:
     def _scan_thread_func(self) -> None:
         """Main scanning thread function."""
         try:
-            # Parse IP range
-            network = IPv4Network(self.ip_range, strict=False)
-            hosts = list(network.hosts())
-            
-            # Add network and broadcast addresses for small networks
-            if network.num_addresses <= 256:
-                hosts.insert(0, network.network_address)
-                hosts.append(network.broadcast_address)
+            # Parse IP range - handle both CIDR and range formats
+            if '/' in self.ip_range:
+                # CIDR format like 192.168.1.0/24
+                network = IPv4Network(self.ip_range, strict=False)
+                hosts = list(network.hosts())
+                
+                # Add network and broadcast addresses for small networks
+                if network.num_addresses <= 256:
+                    hosts.insert(0, network.network_address)
+                    hosts.append(network.broadcast_address)
+            elif '-' in self.ip_range:
+                # Range format like 192.168.1.1-192.168.1.100
+                start_ip, end_ip = self.ip_range.split('-', 1)
+                start = IPv4Address(start_ip.strip())
+                end = IPv4Address(end_ip.strip())
+                hosts = [IPv4Address(ip) for ip in range(int(start), int(end) + 1)]
+            else:
+                # Single IP
+                hosts = [IPv4Address(self.ip_range)]
             
             total_hosts = len(hosts)
             completed = 0
