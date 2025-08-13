@@ -26,12 +26,14 @@ from core.ai_engine import AIEngine
 from core import APP_NAME, __version__
 from core.packet_sniffer import PacketSniffer
 from core.rules import RuleEngine
+from core.system_info import get_system_info
 from core.utils import packetinfo_to_row, PacketInfo, LogWriter
 from .ai_status_viewer import AIStatusViewer
 from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
 from .packet_viewer import PacketViewer
 from .network_visualization import NetworkVisualization
+from .system_status_viewer import SystemStatusViewer
 
 
 class MainWindow(QMainWindow):
@@ -58,6 +60,7 @@ class MainWindow(QMainWindow):
         self.alert_viewer = AlertViewer(self)
         self.ai_status = AIStatusViewer(self)
         self.network_viz = NetworkVisualization(self)
+        self.system_status = SystemStatusViewer(self)
         
         # Przekaż bufor pakietów do AlertViewer dla podglądu
         self.alert_viewer.set_packets_buffer(self._packets_buffer)
@@ -96,6 +99,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.alert_viewer, "Alerty")
         self.tabs.addTab(self.ai_status, "AI")
         self.tabs.addTab(self.network_viz, "Wizualizacja")
+        self.tabs.addTab(self.system_status, "System")
         self.setCentralWidget(self.tabs)
 
         # Status bar
@@ -156,6 +160,9 @@ class MainWindow(QMainWindow):
         self._recreate_ai()
         # Przywrócenie UI
         self._restore_ui_settings()
+        
+        # Inicjalizacja informacji o systemie
+        self._initialize_system_status()
 
     # --- UI helpers ---
     def _create_actions(self) -> None:
@@ -277,6 +284,15 @@ class MainWindow(QMainWindow):
             )
         except Exception:
             self.ai_engine = AIEngine()
+
+    def _initialize_system_status(self) -> None:
+        """Initialize system status information on startup."""
+        try:
+            system_info = get_system_info()
+            self.system_status.update_status(system_info)
+        except Exception:
+            # If system info fails, the widget will show loading state
+            pass
 
     # --- Capture control ---
     def start_capture(self) -> None:
