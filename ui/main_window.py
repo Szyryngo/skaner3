@@ -347,6 +347,7 @@ class MainWindow(QMainWindow):
         processed = 0
         # Batch update UI dla lepszej wydajności
         self.packet_viewer.table.setUpdatesEnabled(False)
+        self.packet_viewer.set_bulk_adding(True)  # Optimize filtering during batch
         while processed < 200:  # ogranicz pętlę na tick
             try:
                 packet_info = self.packet_queue.get_nowait()
@@ -354,6 +355,7 @@ class MainWindow(QMainWindow):
                 break
             self._handle_packet(packet_info)
             processed += 1
+        self.packet_viewer.set_bulk_adding(False)  # Re-enable filtering
         self.packet_viewer.table.setUpdatesEnabled(True)
         # Po batchu – przewiń na dół raz
         if processed > 0:

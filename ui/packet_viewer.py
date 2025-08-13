@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -56,11 +56,21 @@ class PacketViewer(QWidget):
         layout.addWidget(self.table)
         self.setLayout(layout)
 
-        # Podłącz filtrację
-        self.filter_text.textChanged.connect(self.apply_filters)
-        self.filter_protocol.currentIndexChanged.connect(self.apply_filters)
+        # Debounced filtering timer (200ms delay as specified in requirements)
+        self._filter_timer = QTimer(self)
+        self._filter_timer.setSingleShot(True)
+        self._filter_timer.setInterval(200)  # 200ms debounce
+        self._filter_timer.timeout.connect(self._apply_filters_debounced)
+        
+        # Flag to prevent filtering during bulk packet additions
+        self._bulk_adding = False
+
+        # Podłącz filtrację z debouncing
+        self.filter_text.textChanged.connect(self._on_filter_changed)
+        self.filter_protocol.currentIndexChanged.connect(self._on_filter_changed)
 
     def add_packet_row(self, row: Dict[str, str], score: Optional[float] = None) -> None:
+        """Add a packet row to the table. Optimized to avoid immediate filtering during bulk additions."""
         row_index = self.table.rowCount()
         self.table.insertRow(row_index)
         for col_index, key in enumerate(["time", "src_ip", "dst_ip", "src_port", "dst_port", "protocol", "length"]):
@@ -71,8 +81,44 @@ class PacketViewer(QWidget):
         if score is not None:
             self._color_row_by_score(row_index, score)
             
+        # Apply current filter to the new row if not in bulk adding mode
+        if not self._bulk_adding:
+            self._apply_filter_to_row(row_index)
+            
         # Opcjonalnie można przewijać do końca
         self.table.scrollToBottom()
+
+    def set_bulk_adding(self, bulk: bool) -> None:
+        """Set bulk adding mode to optimize performance during packet bursts."""
+        self._bulk_adding = bulk
+        if not bulk:
+            # When bulk adding ends, apply filters to all visible rows
+            self._apply_filters_immediate()
+            
+    def _apply_filter_to_row(self, row_index: int) -> None:
+        """Apply current filter settings to a specific row."""
+        text = self.filter_text.text().strip().lower()
+        proto_filter = self.filter_protocol.currentText()
+        
+        show = True
+        # Proto filter
+        if proto_filter != "ALL":
+            proto_item = self.table.item(row_index, 5)
+            if not proto_item or proto_item.text().upper() != proto_filter:
+                show = False
+        
+        # Text filter - only check selected fields for performance
+        if show and text:
+            matched = False
+            # Check only IP, port, protocol, and length fields for performance
+            for col in [1, 2, 3, 4, 5, 6]:  # src_ip, dst_ip, src_port, dst_port, protocol, length
+                item = self.table.item(row_index, col)
+                if item and text in item.text().lower():
+                    matched = True
+                    break
+            show = matched
+            
+        self.table.setRowHidden(row_index, not show)
         
     def _color_row_by_score(self, row_index: int, score: float) -> None:
         """Koloruj wiersz według score zagrożenia AI"""
@@ -121,27 +167,46 @@ class PacketViewer(QWidget):
         row_index = selected[0].row()
         self.packet_selected.emit(row_index)
 
-    # --- Filtry i wyszukiwanie ---
-    def apply_filters(self) -> None:
+    # --- Filtry i wyszukiwanie z debouncing ---
+    def _on_filter_changed(self) -> None:
+        """Handle filter change with debouncing - starts/restarts 200ms timer."""
+        self._filter_timer.stop()
+        self._filter_timer.start()
+    
+    def _apply_filters_debounced(self) -> None:
+        """Apply filters after debounce delay."""
+        self._apply_filters_immediate()
+    
+    def _apply_filters_immediate(self) -> None:
+        """Apply filters immediately to all rows."""
         text = self.filter_text.text().strip().lower()
         proto_filter = self.filter_protocol.currentText()
+        
         for row in range(self.table.rowCount()):
             show = True
-            # Proto
+            # Proto filter
             if proto_filter != "ALL":
                 proto_item = self.table.item(row, 5)
                 if not proto_item or proto_item.text().upper() != proto_filter:
                     show = False
-            # Tekst
+            
+            # Text filter - only check selected fields for performance (IP, port, protocol, info)
             if show and text:
                 matched = False
-                for col in range(self.table.columnCount()):
+                # Check only IP, port, protocol, and length fields for performance as specified
+                for col in [1, 2, 3, 4, 5, 6]:  # src_ip, dst_ip, src_port, dst_port, protocol, length
                     item = self.table.item(row, col)
                     if item and text in item.text().lower():
                         matched = True
                         break
                 show = matched
+                
             self.table.setRowHidden(row, not show)
+
+    # Legacy method for backward compatibility
+    def apply_filters(self) -> None:
+        """Legacy method - now uses debounced filtering."""
+        self._on_filter_changed()
 
     # --- Menu kontekstowe ---
     def _open_context_menu(self, pos) -> None:
