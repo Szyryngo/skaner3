@@ -50,7 +50,7 @@ class AIEngine:
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
-            self.logger.setLevel(logging.DEBUG)
+            # Don't set logger level here - respect parent/root logger level
         
         self.large_packet_threshold = large_packet_threshold
         self.ml_enabled = ml_enabled and SKLEARN_AVAILABLE

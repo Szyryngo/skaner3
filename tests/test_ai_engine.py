@@ -47,8 +47,8 @@ class TestAIEngine(unittest.TestCase):
         # Check logger has handlers
         self.assertTrue(len(engine.logger.handlers) > 0)
         
-        # Check logger level
-        self.assertEqual(engine.logger.level, logging.DEBUG)
+        # Check logger respects hierarchy (doesn't override parent level)
+        self.assertEqual(engine.logger.level, logging.NOTSET)  # Should inherit from parent
 
     def test_analyze_packet_preserves_api(self):
         """Test that analyze_packet API is unchanged after logging modifications."""
