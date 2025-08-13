@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 try:
     # Importowane opcjonalnie – środowisko bez scapy przejdzie w tryb symulacji
-    from scapy.all import IP, TCP, UDP, Raw  # type: ignore
+    from scapy.all import IP, TCP, UDP, Raw, Ether  # type: ignore
     SCAPY_AVAILABLE = True
 except Exception:
     SCAPY_AVAILABLE = False
@@ -32,6 +32,10 @@ class PacketInfo:
     protocol: str
     length: int
     raw_bytes: Optional[bytes] = None
+    # Device information
+    src_mac: str = ""
+    dst_mac: str = ""
+    user_agent: str = ""
 
 
 def is_scapy_available() -> bool:
@@ -71,6 +75,23 @@ def packet_from_scapy(scapy_packet: Any) -> Optional[PacketInfo]:
 
         raw = bytes(scapy_packet)
         length = int(len(raw))
+        
+        # Extract device information
+        src_mac = ""
+        dst_mac = ""
+        user_agent = ""
+        
+        try:
+            if scapy_packet.haslayer(Ether):
+                src_mac = scapy_packet[Ether].src or ""
+                dst_mac = scapy_packet[Ether].dst or ""
+        except Exception:
+            pass
+            
+        try:
+            user_agent = extract_user_agent_from_packet(scapy_packet)
+        except Exception:
+            pass
 
         return PacketInfo(
             timestamp=now_timestamp(),
@@ -81,6 +102,9 @@ def packet_from_scapy(scapy_packet: Any) -> Optional[PacketInfo]:
             protocol=protocol,
             length=length,
             raw_bytes=raw,
+            src_mac=src_mac,
+            dst_mac=dst_mac,
+            user_agent=user_agent,
         )
     except Exception:
         return None
@@ -97,6 +121,16 @@ def make_fake_packet() -> PacketInfo:
     length = random.randint(60, 1600)
     # Losowa treść bajtów do hexdump/ASCII
     raw = bytes(random.getrandbits(8) for _ in range(length))
+    
+    # Generate fake MAC addresses for simulation
+    fake_src_mac = ":".join([f"{random.randint(0, 255):02x}" for _ in range(6)])
+    fake_dst_mac = ":".join([f"{random.randint(0, 255):02x}" for _ in range(6)])
+    fake_user_agent = random.choice([
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+        ""
+    ])
 
     return PacketInfo(
         timestamp=now_timestamp(),
@@ -107,6 +141,9 @@ def make_fake_packet() -> PacketInfo:
         protocol=protocol,
         length=length,
         raw_bytes=raw,
+        src_mac=fake_src_mac,
+        dst_mac=fake_dst_mac,
+        user_agent=fake_user_agent,
     )
 
 
@@ -281,4 +318,194 @@ class LogWriter:
                 self._file.close()
             except Exception:
                 pass
+
+
+# --- Network Devices ---
+@dataclass
+class NetworkDevice:
+    """Informacje o urządzeniu wykrytym w sieci"""
+    ip_address: str
+    mac_address: str
+    hostname: str
+    oui_vendor: str
+    user_agent: str
+    protocols: set[str]
+    first_seen: float
+    last_seen: float
+
+
+def get_mac_address_from_packet(scapy_packet: Any) -> Optional[str]:
+    """Wyciąg adresu MAC z pakietu scapy"""
+    if not SCAPY_AVAILABLE or not scapy_packet:
+        return None
+    
+    try:
+        if scapy_packet.haslayer(Ether):
+            return scapy_packet[Ether].src
+    except Exception:
+        pass
+    return None
+
+
+@lru_cache(maxsize=1024)
+def get_oui_vendor(mac_address: str) -> str:
+    """Próba identyfikacji producenta na podstawie OUI (pierwszych 3 bajtów MAC)"""
+    if not mac_address or len(mac_address) < 8:
+        return "Unknown"
+    
+    # Wyciągnij pierwsze 3 bajty MAC (OUI)
+    oui = mac_address.replace(":", "").replace("-", "").upper()[:6]
+    
+    # Podstawowe mapowanie OUI -> vendor (można rozszerzyć)
+    oui_vendors = {
+        "000C29": "VMware",
+        "080027": "VirtualBox",
+        "005056": "VMware",
+        "0050F2": "Microsoft",
+        "001B63": "Apple",
+        "F4F26D": "Google",
+        "B8E856": "Apple",
+        "20C9D0": "Apple",
+        "003065": "Apple",
+        "000D93": "Apple",
+        "00A040": "Apple",
+        "00061B": "Apple",
+        "0013CE": "Intel",
+        "001CC4": "Intel",
+        "0022FB": "Intel",
+        "001E64": "Intel",
+        "7C7A91": "Cisco",
+        "00D0C9": "Cisco",
+        "001094": "Cisco",
+        "00192F": "Cisco",
+        "00E014": "Cisco",
+        "0019E7": "Cisco",
+        "D85DE2": "Cisco",
+        "006008": "Cisco",
+        "00A0C9": "Cisco",
+        "001560": "Cisco",
+        "002155": "Cisco",
+        "00907C": "Cisco",
+        "00D098": "Cisco",
+        "00906D": "Cisco",
+        "001C0E": "Cisco",
+        "001A30": "Cisco",
+        "000FE2": "Cisco",
+        "0013C4": "Cisco",
+        "00E099": "Cisco",
+        "000ECB": "Cisco",
+        "000A8A": "Cisco",
+        "000ED7": "Cisco",
+        "0017E0": "Cisco",
+        "001279": "Cisco",
+        "0019AA": "Cisco",
+        "001C58": "Cisco",
+        "0016C7": "Cisco",
+        "0015C6": "Cisco",
+        "00230D": "Cisco",
+        "001CDF": "Cisco",
+        "001F9E": "Cisco",
+        "0024F7": "Cisco",
+        "002467": "Cisco",
+        "0025B5": "Cisco",
+        "002764": "Cisco",
+        "0026F1": "Cisco",
+        "002854": "Cisco",
+        "0029A3": "Cisco",
+        "002BC1": "Cisco",
+        "002FD0": "Cisco",
+        "0031FD": "Cisco",
+        "003471": "Cisco",
+        "003A98": "Cisco",
+        "003A9A": "Cisco",
+        "003A9B": "Cisco",
+        "003A9C": "Cisco",
+        "4C00AD": "Cisco",
+        "504618": "Cisco",
+        "0894EF": "Cisco",
+        "10F3DB": "Cisco",
+        "1C99E8": "Cisco",
+        "20B9E0": "Cisco",
+        "28C7CE": "Cisco",
+        "3CDCBC": "Cisco",
+        "44D3CA": "Cisco",
+        "50E085": "Cisco",
+        "5C5015": "Cisco",
+        "689C70": "Cisco",
+        "6CAB31": "Cisco",
+        "70E4C7": "Cisco",
+        "7426AC": "Cisco",
+        "84B8AC": "Cisco",
+        "881D74": "Cisco",
+        "8C60C3": "Cisco",
+        "9CE6E7": "Cisco",
+        "A0EC80": "Cisco",
+        "A46CF1": "Cisco",
+        "ACF2C5": "Cisco",
+        "B4A4E3": "Cisco",
+        "B8BE6E": "Cisco",
+        "BC16F5": "Cisco",
+        "C49DED": "Cisco",
+        "C83A35": "Cisco",
+        "CC161D": "Cisco",
+        "D067E5": "Cisco",
+        "D4A0F8": "Cisco",
+        "D8B377": "Cisco",
+        "E0F9B7": "Cisco",
+        "E49AD0": "Cisco",
+        "E84E84": "Cisco",
+        "E8B748": "Cisco",
+        "EC44A9": "Cisco",
+        "ECCE13": "Cisco",
+        "F07F06": "Cisco",
+        "F0F61C": "Cisco",
+        "F4CFE2": "Cisco",
+        "F8DB7F": "Cisco",
+        "FC5B39": "Cisco"
+    }
+    
+    return oui_vendors.get(oui, f"Unknown-{oui}")
+
+
+def extract_user_agent_from_packet(scapy_packet: Any) -> str:
+    """Próba wyciągnięcia User-Agent z pakietu HTTP"""
+    if not SCAPY_AVAILABLE or not scapy_packet:
+        return ""
+    
+    try:
+        if scapy_packet.haslayer(Raw):
+            payload = bytes(scapy_packet[Raw])
+            payload_str = payload.decode('utf-8', errors='ignore')
+            
+            # Szukaj User-Agent w nagłówkach HTTP
+            lines = payload_str.split('\r\n')
+            for line in lines:
+                if line.lower().startswith('user-agent:'):
+                    return line[11:].strip()  # Usuń "User-Agent: "
+                    
+    except Exception:
+        pass
+    return ""
+
+
+def extract_device_info_from_packet(scapy_packet: Any, packet_info: PacketInfo) -> Optional[Dict[str, str]]:
+    """Wyciąg informacji o urządzeniu z pakietu"""
+    if not SCAPY_AVAILABLE:
+        return None
+    
+    try:
+        device_info = {
+            "mac_address": get_mac_address_from_packet(scapy_packet) or "",
+            "hostname": resolve_hostname(packet_info.src_ip),
+            "user_agent": extract_user_agent_from_packet(scapy_packet),
+        }
+        
+        if device_info["mac_address"]:
+            device_info["oui_vendor"] = get_oui_vendor(device_info["mac_address"])
+        else:
+            device_info["oui_vendor"] = ""
+            
+        return device_info
+    except Exception:
+        return None
 

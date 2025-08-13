@@ -32,6 +32,7 @@ from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
 from .packet_viewer import PacketViewer
 from .network_visualization import NetworkVisualization
+from .network_devices import NetworkDevicesViewer
 
 
 class MainWindow(QMainWindow):
@@ -58,6 +59,7 @@ class MainWindow(QMainWindow):
         self.alert_viewer = AlertViewer(self)
         self.ai_status = AIStatusViewer(self)
         self.network_viz = NetworkVisualization(self)
+        self.network_devices = NetworkDevicesViewer(self)
         
         # Przekaż bufor pakietów do AlertViewer dla podglądu
         self.alert_viewer.set_packets_buffer(self._packets_buffer)
@@ -96,6 +98,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.alert_viewer, "Alerty")
         self.tabs.addTab(self.ai_status, "AI")
         self.tabs.addTab(self.network_viz, "Wizualizacja")
+        self.tabs.addTab(self.network_devices, "Urządzenia w sieci")
         self.setCentralWidget(self.tabs)
 
         # Status bar
@@ -390,6 +393,12 @@ class MainWindow(QMainWindow):
         # Aktualizuj status AI na bieżąco przy anomaliach
         try:
             self.ai_status.update_status(self.ai_engine.get_status())
+        except Exception:
+            pass
+
+        # Aktualizuj urządzenia w sieci
+        try:
+            self.network_devices.add_packet(packet_info)
         except Exception:
             pass
 
