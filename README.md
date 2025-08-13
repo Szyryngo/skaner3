@@ -1,17 +1,32 @@
 # AI Network Sniffer
 
 ## Opis projektu
-AI Network Sniffer to inteligentny sniffer sieciowy z wbudowanym silnikiem AI do wykrywania anomalii i zagrożeń bezpieczeństwa w ruchu sieciowym. Umożliwia analizę pakietów w czasie rzeczywistym, wykrywanie podejrzanych zdarzeń, eksport danych i konfigurację parametrów systemu oraz AI.
+AI Network Sniffer to inteligentny sniffer sieciowy z wbudowanym silnikiem AI do wykrywania anomalii i zagrożeń bezpieczeństwa w ruchu sieciowym. Umożliwia analizę pakietów w czasie rzeczywistym lub w trybie symulacji, łącząc heurystyki, uczenie maszynowe oraz system reguł.
 
 ## Funkcjonalności
 - Analiza ruchu sieciowego na żywo (tryb rzeczywisty i symulacyjny)
-- Wykrywanie anomalii: heurystyki, IsolationForest (sklearn), Half-Space Trees (river)
+- Wykrywanie anomalii w ruchu sieciowym:
+  - Heurystyki (proste reguły)
+  - IsolationForest (scikit-learn)
+  - Half-Space Trees (river) – detekcja online
+  - Fuzja heurystyk i ML
 - System reguł bezpieczeństwa (RuleEngine)
-- Eksport pakietów i alertów do plików
-- Automatyczne logowanie i rotacja plików
-- Wielozakładkowy interfejs graficzny (PyQt5)
-- Podgląd statusu AI/modelu, monitor zasobów systemowych
-- Zaawansowane kolorowanie i filtracja alertów
+- Eksport pakietów oraz alertów do plików (z automatyczną rotacją)
+- Wielozakładkowy interfejs graficzny (PyQt5):
+  - Podgląd i filtrowanie pakietów sieciowych
+  - Szczegóły pakietów (hex/ascii/geolokalizacja)
+  - Widok alertów bezpieczeństwa
+  - Wizualizacja statystyk sieciowych (ruch, protokoły, itp.)
+  - **Zakładka „Status systemu”** – prezentacja na żywo:
+    - Lista interfejsów sieciowych (nazwa, status, typ, adres IPv4)
+    - Liczba uruchomionych wątków
+    - Wykorzystanie CPU, RAM
+    - Uptime systemu
+- Zaawansowane kolorowanie i filtrowanie alertów
+- Monitorowanie zasobów systemowych (psutil)
+- Konfigurowalność AI oraz reguł przez GUI
+- Geolokalizacja adresów IP
+- Testy jednostkowe
 
 ## Wymagania
 - Python 3.10+ (zalecany 3.13)
@@ -25,7 +40,7 @@ AI Network Sniffer to inteligentny sniffer sieciowy z wbudowanym silnikiem AI do
 ```bash
 pip install -r requirements.txt
 ```
-lub ręcznie:
+olę ręcznie:
 ```bash
 pip install PyQt5 scapy scikit-learn river psutil
 ```
