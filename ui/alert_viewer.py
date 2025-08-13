@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (
     QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QHBoxLayout,
-    QSplitter, QTextEdit, QLabel, QListWidgetItem
+    QSplitter, QTextEdit, QLabel, QListWidgetItem, QLineEdit, QPushButton
 )
 
 from core.utils import PacketInfo
@@ -17,6 +17,22 @@ class AlertViewer(QWidget):
     
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        
+        layout = QVBoxLayout(self)
+        
+        # Pasek filtrowania
+        filter_layout = QHBoxLayout()
+        filter_layout.addWidget(QLabel("Filtruj alerty:"))
+        self.filter_input = QLineEdit()
+        self.filter_input.setPlaceholderText("Szukaj po typie alertu, IP, protokole...")
+        self.filter_input.textChanged.connect(self._apply_filter)
+        filter_layout.addWidget(self.filter_input)
+        
+        clear_filter_btn = QPushButton("Wyczyść")
+        clear_filter_btn.clicked.connect(self._clear_filter)
+        filter_layout.addWidget(clear_filter_btn)
+        
+        layout.addLayout(filter_layout)
         
         # Lista alertów
         self.list_widget = QListWidget(self)
@@ -42,7 +58,6 @@ class AlertViewer(QWidget):
         self.splitter.setStretchFactor(0, 2)
         self.splitter.setStretchFactor(1, 3)
         
-        layout = QVBoxLayout(self)
         layout.addWidget(self.splitter)
         self.setLayout(layout)
         
@@ -175,3 +190,23 @@ class AlertViewer(QWidget):
         self._packets_buffer.clear()
         self.detail_hex.clear()
         self.detail_ascii.clear()
+        
+    def _apply_filter(self) -> None:
+        """Zastosuj filtr do listy alertów"""
+        filter_text = self.filter_input.text().lower()
+        
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            if item:
+                # Sprawdź czy tekst alertu zawiera szukany tekst
+                item_text = item.text().lower()
+                item.setHidden(filter_text not in item_text)
+    
+    def _clear_filter(self) -> None:
+        """Wyczyść filtr"""
+        self.filter_input.clear()
+        # Pokaż wszystkie elementy
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            if item:
+                item.setHidden(False)

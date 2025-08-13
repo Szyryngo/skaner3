@@ -32,6 +32,7 @@ from .alert_viewer import AlertViewer
 from .config_dialog import ConfigDialog
 from .packet_viewer import PacketViewer
 from .network_visualization import NetworkVisualization
+from .statistics_viewer import StatisticsViewer
 
 
 class MainWindow(QMainWindow):
@@ -58,6 +59,7 @@ class MainWindow(QMainWindow):
         self.alert_viewer = AlertViewer(self)
         self.ai_status = AIStatusViewer(self)
         self.network_viz = NetworkVisualization(self)
+        self.statistics = StatisticsViewer(self)
         
         # Przekaż bufor pakietów do AlertViewer dla podglądu
         self.alert_viewer.set_packets_buffer(self._packets_buffer)
@@ -96,6 +98,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.alert_viewer, "Alerty")
         self.tabs.addTab(self.ai_status, "AI")
         self.tabs.addTab(self.network_viz, "Wizualizacja")
+        self.tabs.addTab(self.statistics, "Statystyki")
         self.setCentralWidget(self.tabs)
 
         # Status bar
@@ -376,15 +379,21 @@ class MainWindow(QMainWindow):
         if (self._total_packets % 20) == 0:
             self._update_status()
 
+        # Aktualizuj statystyki - dodaj pakiet
+        self.statistics.add_packet(packet_info)
+
         # Dodaj alert jeśli to anomalia
         if ai.get("is_anomaly"):
             self.alert_viewer.add_alert("AI anomaly", row, score=score)
+            self.statistics.add_alert("AI anomaly", row, score=score)
+            self.ai_status.increment_anomaly_count()  # Zwiększ licznik anomalii w AI status
             self._log_alert(["AI anomaly", str(score), row["time"], row["src_ip"], row["dst_ip"], row["protocol"], row["length"]])
 
         # Dodaj alerty z reguł (jeśli nie tylko anomalie)
         if not self.cfg_ai.get("alerts_only_anomalies", False):
             for alert in self.rule_engine.evaluate(packet_info):
                 self.alert_viewer.add_alert(alert, row)
+                self.statistics.add_alert(alert, row)
                 self._log_alert([alert, "", row["time"], row["src_ip"], row["dst_ip"], row["protocol"], row["length"]])
 
         # Aktualizuj status AI na bieżąco przy anomaliach

@@ -11,6 +11,10 @@ class AIStatusViewer(QWidget):
         self.label_summary = QLabel(self)
         self.text_details = QTextEdit(self)
         self.text_details.setReadOnly(True)
+        
+        # Liczniki anomalii
+        self._anomaly_count = 0
+        self._last_effectiveness = None
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.label_summary)
@@ -22,7 +26,8 @@ class AIStatusViewer(QWidget):
             f"ML: {'ON' if status.get('ml_enabled') else 'OFF'} | "
             f"Model: {'ready' if status.get('model_ready') else 'loading'} | "
             f"Seen: {status.get('samples_seen', 0)} | "
-            f"Last score: {status.get('last_score')}"
+            f"Last score: {status.get('last_score')} | "
+            f"Anomalies: {self._anomaly_count}"
         )
         self.label_summary.setText(summary)
 
@@ -44,7 +49,22 @@ class AIStatusViewer(QWidget):
             f"last_stream_score: {stream_score}",
             f"last_stream_z: {stream_z}",
             f"last_reasons: {', '.join(map(str, reasons))}",
+            f"anomaly_count: {self._anomaly_count}",
+            f"last_effectiveness: {self._last_effectiveness}",
         ]
         self.text_details.setPlainText("\n".join(txt))
+        
+    def increment_anomaly_count(self) -> None:
+        """Zwiększ licznik wykrytych anomalii"""
+        self._anomaly_count += 1
+        
+    def set_last_effectiveness(self, effectiveness: float) -> None:
+        """Ustaw ostatni wynik skuteczności"""
+        self._last_effectiveness = effectiveness
+        
+    def reset_counters(self) -> None:
+        """Resetuj liczniki"""
+        self._anomaly_count = 0
+        self._last_effectiveness = None
 
 
