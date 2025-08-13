@@ -4,12 +4,16 @@ Wspiera dynamiczne dostosowanie parametrów programu do środowiska uruchomienia
 
 Funkcje:
     get_system_info() -> dict: Zwraca słownik z danymi o systemie, CPU, pamięci i dysku.
+    get_system_status() -> dict: Zwraca status systemu dla GUI (CPU, RAM, interfejsy, uptime).
 
-Wymaga pakietu: psutil
+Wymaga pakietów: psutil, platform, socket
 """
 
 import platform
 import os
+import socket
+import time
+from datetime import datetime, timedelta
 
 try:
     import psutil
@@ -67,3 +71,131 @@ def get_system_info():
         except Exception:
             pass
     return info
+
+
+def get_system_status():
+    """
+    Pobiera aktualny status systemu dla prezentacji w GUI.
+    
+    Returns:
+        dict: Słownik z kluczami:
+            - cpu_percent (float): Aktualne obciążenie CPU (%).
+            - ram_percent (float): Aktualne obciążenie RAM (%).
+            - ram_used (int): Użyta pamięć RAM (B).
+            - ram_total (int): Całkowita pamięć RAM (B).
+            - thread_count (int): Liczba uruchomionych wątków w systemie.
+            - uptime (str): Czas działania systemu (format: "X dni, Y godzin").
+            - network_interfaces (list): Lista interfejsów sieciowych, każdy jako dict z:
+                - name (str): Nazwa interfejsu.
+                - status (str): Status ("aktywny", "nieaktywny", "nieznany").
+                - type (str): Typ interfejsu ("ethernet", "wifi", "loopback", "inne").
+                - ipv4 (str): Adres IPv4 lub "brak".
+    """
+    status = {
+        "cpu_percent": 0.0,
+        "ram_percent": 0.0,
+        "ram_used": 0,
+        "ram_total": 0,
+        "thread_count": 0,
+        "uptime": "nieznany",
+        "network_interfaces": []
+    }
+    
+    if not psutil:
+        return status
+    
+    try:
+        # CPU
+        status["cpu_percent"] = psutil.cpu_percent(interval=None)
+    except Exception:
+        pass
+    
+    try:
+        # RAM
+        vm = psutil.virtual_memory()
+        status["ram_percent"] = vm.percent
+        status["ram_used"] = vm.used
+        status["ram_total"] = vm.total
+    except Exception:
+        pass
+    
+    try:
+        # Liczba wątków w systemie
+        total_threads = 0
+        for proc in psutil.process_iter(['num_threads']):
+            try:
+                total_threads += proc.info['num_threads'] or 0
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        status["thread_count"] = total_threads
+    except Exception:
+        pass
+    
+    try:
+        # Uptime systemu
+        boot_time = psutil.boot_time()
+        uptime_seconds = time.time() - boot_time
+        uptime_delta = timedelta(seconds=int(uptime_seconds))
+        days = uptime_delta.days
+        hours, remainder = divmod(uptime_delta.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+        
+        if days > 0:
+            status["uptime"] = f"{days} dni, {hours} godzin"
+        elif hours > 0:
+            status["uptime"] = f"{hours} godzin, {minutes} minut"
+        else:
+            status["uptime"] = f"{minutes} minut"
+    except Exception:
+        pass
+    
+    try:
+        # Interfejsy sieciowe
+        interfaces = []
+        net_if_addrs = psutil.net_if_addrs()
+        net_if_stats = psutil.net_if_stats()
+        
+        for if_name in net_if_addrs:
+            interface_info = {
+                "name": if_name,
+                "status": "nieznany",
+                "type": "inne",
+                "ipv4": "brak"
+            }
+            
+            # Status interfejsu
+            try:
+                if if_name in net_if_stats:
+                    stats = net_if_stats[if_name]
+                    interface_info["status"] = "aktywny" if stats.isup else "nieaktywny"
+            except Exception:
+                pass
+            
+            # Typ interfejsu (na podstawie nazwy)
+            if_name_lower = if_name.lower()
+            if if_name_lower.startswith(('lo', 'loopback')):
+                interface_info["type"] = "loopback"
+            elif if_name_lower.startswith(('eth', 'en', 'em')):
+                interface_info["type"] = "ethernet"
+            elif if_name_lower.startswith(('wlan', 'wifi', 'wl')):
+                interface_info["type"] = "wifi"
+            
+            # Adres IPv4
+            try:
+                for addr in net_if_addrs[if_name]:
+                    if addr.family == socket.AF_INET:  # IPv4
+                        interface_info["ipv4"] = addr.address
+                        break
+            except Exception:
+                pass
+            
+            interfaces.append(interface_info)
+        
+        # Sortuj interfejsy: loopback na końcu, reszta alfabetycznie
+        interfaces.sort(key=lambda x: (x["type"] == "loopback", x["name"]))
+        status["network_interfaces"] = interfaces
+        
+    except Exception:
+        pass
+    
+    return status

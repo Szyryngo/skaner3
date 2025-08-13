@@ -22,6 +22,7 @@ AI Network Sniffer to inteligentny sniffer sieciowy z wbudowanym silnikiem AI do
     - Liczba uruchomionych wątków
     - Wykorzystanie CPU, RAM
     - Uptime systemu
+    - Automatyczne odświeżanie danych co 2 sekundy
 - Zaawansowane kolorowanie i filtrowanie alertów
 - Monitorowanie zasobów systemowych (psutil)
 - Konfigurowalność AI oraz reguł przez GUI
