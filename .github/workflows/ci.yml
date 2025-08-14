@@ -28,11 +28,3 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
-
-      # Test step permanently disabled
-      # - name: Run tests
-      #   run: |
-      #     export PYTHONPATH=$(pwd)
-      #     pytest -q
-      #   shell: bash
